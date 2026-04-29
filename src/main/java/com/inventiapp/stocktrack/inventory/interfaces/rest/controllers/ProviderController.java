@@ -8,6 +8,7 @@ import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProvidersQ
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetProviderByIdQuery;
 import com.inventiapp.stocktrack.inventory.domain.services.ProviderCommandService;
 import com.inventiapp.stocktrack.inventory.domain.services.ProviderQueryService;
+import com.inventiapp.stocktrack.iam.interfaces.acl.AuthenticatedUserContextFacade;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.CreateProviderResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.ProviderResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.UpdateProviderResource;
@@ -42,11 +43,14 @@ public class ProviderController {
 
     private final ProviderCommandService providerCommandService;
     private final ProviderQueryService providerQueryService;
+    private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
     public ProviderController(ProviderCommandService providerCommandService,
-                              ProviderQueryService providerQueryService) {
+                              ProviderQueryService providerQueryService,
+                              AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.providerCommandService = providerCommandService;
         this.providerQueryService = providerQueryService;
+        this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
     /**
@@ -63,7 +67,8 @@ public class ProviderController {
     @PostMapping(consumes = APPLICATION_JSON_VALUE)
     public ResponseEntity<ProviderResource> createProvider(@Valid @RequestBody CreateProviderResource resource) {
         try {
-            var command = CreateProviderCommandFromResourceAssembler.toCommandFromResource(resource);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var command = CreateProviderCommandFromResourceAssembler.toCommandFromResource(resource, ownerId);
             Long createdId = providerCommandService.handle(command);
 
             var opt = providerQueryService.handle(new GetProviderByIdQuery(createdId));

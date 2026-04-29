@@ -80,8 +80,9 @@ public class Provider extends AuditableAbstractAggregateRoot<Provider> {
     /**
      * Constructs a Provider from a CreateProviderCommand.
      * Registers a ProviderCreatedEvent. Note: id may be null until persisted.
+     * Sets ownerId for multi-tenant isolation.
      *
-     * @param command creation command containing provider data
+     * @param command creation command containing provider data and ownerId
      */
     public Provider(CreateProviderCommand command) {
         this();
@@ -90,6 +91,9 @@ public class Provider extends AuditableAbstractAggregateRoot<Provider> {
         this.email = new Email(command.email());
         this.phoneNumber = new PhoneNumber(command.phoneNumber());
         this.ruc = new Ruc(command.ruc());
+
+        // Set ownerId for multi-tenant isolation
+        this.setOwnerId(command.ownerId());
 
         // Register created event (aggregate-level). The id may be null if not yet persisted.
         this.addDomainEvent(new ProviderCreatedEvent(
