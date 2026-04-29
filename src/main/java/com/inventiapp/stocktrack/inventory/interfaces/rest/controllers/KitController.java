@@ -6,6 +6,7 @@ import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllKitsQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetKitByIdQuery;
 import com.inventiapp.stocktrack.inventory.domain.services.KitCommandService;
 import com.inventiapp.stocktrack.inventory.domain.services.KitQueryService;
+import com.inventiapp.stocktrack.iam.interfaces.acl.AuthenticatedUserContextFacade;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.CreateKitResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.KitResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.transform.CreateKitCommandFromResourceAssembler;
@@ -37,6 +38,7 @@ public class KitController {
 
     private final KitCommandService kitCommandService;
     private final KitQueryService kitQueryService;
+    private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
     /**
      * Constructor for KitController.
@@ -48,9 +50,11 @@ public class KitController {
      */
     public KitController(
             KitCommandService kitCommandService,
-            KitQueryService kitQueryService) {
+            KitQueryService kitQueryService,
+            AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.kitCommandService = kitCommandService;
         this.kitQueryService = kitQueryService;
+        this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
     /**
@@ -71,8 +75,9 @@ public class KitController {
     @PostMapping(consumes = APPLICATION_JSON_VALUE)
     public ResponseEntity<KitResource> createKit(@Valid @RequestBody CreateKitResource resource) {
         try {
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
             var kit = kitCommandService
-                    .handle(CreateKitCommandFromResourceAssembler.toCommandFromResource(resource));
+                    .handle(CreateKitCommandFromResourceAssembler.toCommandFromResource(resource, ownerId));
             return kit.map(k -> new ResponseEntity<>(
                     KitResourceFromEntityAssembler.toResourceFromEntity(k), CREATED))
                     .orElseGet(() -> ResponseEntity.badRequest().build());
