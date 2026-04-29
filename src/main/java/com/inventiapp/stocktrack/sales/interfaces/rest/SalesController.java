@@ -4,6 +4,7 @@ import com.inventiapp.stocktrack.sales.domain.model.queries.GetAllSalesQuery;
 import com.inventiapp.stocktrack.sales.domain.model.queries.GetSaleByIdQuery;
 import com.inventiapp.stocktrack.sales.domain.services.SaleCommandService;
 import com.inventiapp.stocktrack.sales.domain.services.SaleQueryService;
+import com.inventiapp.stocktrack.iam.interfaces.acl.AuthenticatedUserContextFacade;
 import com.inventiapp.stocktrack.sales.interfaces.rest.resources.CreateSaleResource;
 import com.inventiapp.stocktrack.sales.interfaces.rest.resources.ErrorResponse;
 import com.inventiapp.stocktrack.sales.interfaces.rest.resources.SaleResource;
@@ -29,10 +30,13 @@ public class SalesController {
 
     private final SaleCommandService salesCommandService;
     private final SaleQueryService salesQueryService;
+    private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
-    public SalesController(SaleCommandService salesCommandService, SaleQueryService salesQueryService) {
+    public SalesController(SaleCommandService salesCommandService, SaleQueryService salesQueryService,
+                           AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.salesCommandService = salesCommandService;
         this.salesQueryService = salesQueryService;
+        this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
     @PostMapping
@@ -44,7 +48,8 @@ public class SalesController {
     })
     public ResponseEntity<?> createSale(@RequestBody CreateSaleResource resource) {
         try {
-            var createSaleCommand = CreateSaleCommandFromResourceAssembler.toCommandFromResource(resource);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var createSaleCommand = CreateSaleCommandFromResourceAssembler.toCommandFromResource(resource, ownerId);
 
             var saleId = salesCommandService.handle(createSaleCommand);
             if (saleId == null || saleId == 0L) {

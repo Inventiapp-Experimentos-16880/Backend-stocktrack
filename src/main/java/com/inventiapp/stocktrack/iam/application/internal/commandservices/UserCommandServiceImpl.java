@@ -86,6 +86,7 @@ public class UserCommandServiceImpl implements UserCommandService {
      * <p>
      *     This method handles the {@link SignUpCommand} command and returns the created user.
      *     Sign-up creates an ADMIN user (business owner) with ALL permissions automatically.
+     *     For admins: ownerId = userId (they own themselves)
      * </p>
      * @param command the sign-up command containing the email and password
      * @return the created user with ROLE_ADMIN and all permissions
@@ -111,7 +112,22 @@ public class UserCommandServiceImpl implements UserCommandService {
         var encodedPassword = hashingService.encode(command.password());
         var user = new User(command.email(), encodedPassword, roles, allPermissions);
         
-        return Optional.of(userRepository.save(user));
+        // Set a temporary ownerId before first save (will be updated to actual ID after generation)
+        user.assignOwnerId(0L);
+
+        // Save the user to get the generated ID
+        var savedUser = userRepository.save(user);
+
+        // Update ownerId to match the generated user ID (admin owns themselves)
+        // Use native query to bypass the updatable=false constraint
+        userRepository.updateOwnerIdNative(savedUser.getId(), savedUser.getId());
+
+        // Refresh the entity from database to get the updated ownerId
+        savedUser = userRepository.findById(savedUser.getId()).orElseThrow(
+                () -> new RuntimeException("Failed to retrieve the created user")
+        );
+
+        return Optional.of(savedUser);
     }
 
     /**
@@ -119,8 +135,9 @@ public class UserCommandServiceImpl implements UserCommandService {
      * <p>
      *     This method handles the {@link CreateUserCommand} command and returns the created user.
      *     Users created by admin always get ROLE_USER. Permissions control access to specific modules.
+     *     For workers: ownerId = the admin ID who created them
      * </p>
-     * @param command the create user command containing the email, password and permissions
+     * @param command the create user command containing the email, password, permissions, and ownerId
      * @return the created user with ROLE_USER and specified permissions
      * @throws RuntimeException if the email already exists
      */
@@ -146,6 +163,9 @@ public class UserCommandServiceImpl implements UserCommandService {
         var encodedPassword = hashingService.encode(command.password());
         var user = new User(command.email(), encodedPassword, roles, permissions);
         
+        // Set the ownerId to the admin who created this user
+        user.assignOwnerId(command.ownerId());
+
         return Optional.of(userRepository.save(user));
     }
 

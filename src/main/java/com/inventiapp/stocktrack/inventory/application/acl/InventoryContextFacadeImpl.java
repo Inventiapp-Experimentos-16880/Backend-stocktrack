@@ -12,6 +12,7 @@ import com.inventiapp.stocktrack.inventory.domain.services.KitQueryService;
 import com.inventiapp.stocktrack.inventory.domain.services.ProductCommandService;
 import com.inventiapp.stocktrack.inventory.domain.services.ProductQueryService;
 import com.inventiapp.stocktrack.inventory.interfaces.acl.InventoryContextFacade;
+import com.inventiapp.stocktrack.iam.interfaces.acl.AuthenticatedUserContextFacade;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,14 +28,16 @@ public class InventoryContextFacadeImpl implements InventoryContextFacade {
     private final BatchQueryService batchQueryService;
     private final BatchCommandService batchCommandService;
     private final KitQueryService kitQueryService;
+    private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
 
-    public InventoryContextFacadeImpl(ProductQueryService productQueryService, ProductCommandService productCommandService, BatchQueryService batchQueryService, BatchCommandService batchCommandService, KitQueryService kitQueryService) {
+    public InventoryContextFacadeImpl(ProductQueryService productQueryService, ProductCommandService productCommandService, BatchQueryService batchQueryService, BatchCommandService batchCommandService, KitQueryService kitQueryService, AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.productQueryService = productQueryService;
         this.productCommandService = productCommandService;
         this.batchQueryService = batchQueryService;
         this.batchCommandService = batchCommandService;
         this.kitQueryService = kitQueryService;
+        this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
 
@@ -63,7 +66,8 @@ public class InventoryContextFacadeImpl implements InventoryContextFacade {
             throw new IllegalArgumentException("quantity inválida");
         }
 
-        var getAllBatchesByProductIdQuery = new GetAllBatchesByProductIdQuery(productId);
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var getAllBatchesByProductIdQuery = new GetAllBatchesByProductIdQuery(productId, ownerId);
         List<Batch> batches = batchQueryService.handle(getAllBatchesByProductIdQuery);
 
         List<Batch> sorted = batches.stream()

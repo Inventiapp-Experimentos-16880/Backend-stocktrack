@@ -18,7 +18,7 @@ public class CreateSaleCommandFromResourceAssembler {
         CreateSaleCommandFromResourceAssembler.inventoryService = inventoryService;
     }
 
-    public static CreateSaleCommand toCommandFromResource(CreateSaleResource resource) {
+    public static CreateSaleCommand toCommandFromResource(CreateSaleResource resource, Long ownerId) {
         if (resource == null) {
             throw new IllegalArgumentException("resource cannot be null");
         }
@@ -98,6 +98,6 @@ public class CreateSaleCommandFromResourceAssembler {
                 .mapToDouble(i -> i.unitPrice() * i.quantity())
                 .sum();
 
-        return new CreateSaleCommand(resource.staffUserId(), total, details);
+        return new CreateSaleCommand(resource.staffUserId(), total, details, ownerId);
     }
 }
