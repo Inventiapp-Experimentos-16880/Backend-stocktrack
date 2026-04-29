@@ -17,6 +17,16 @@ public interface TokenService {
     String generateToken(Long userId, String email, List<String> roles);
 
     /**
+     * Generate a token for a user with owner ID for multi-tenant isolation
+     * @param userId The user ID (used as subject in JWT)
+     * @param email The user email
+     * @param roles List of user roles
+     * @param ownerId The owner ID for multi-tenant logical isolation
+     * @return The generated token
+     */
+    String generateToken(Long userId, String email, List<String> roles, Long ownerId);
+
+    /**
      * Extract user ID from a token
      * @param token The token
      * @return The user ID (subject from JWT)
@@ -36,6 +46,13 @@ public interface TokenService {
      * @return List of roles
      */
     List<String> getRolesFromToken(String token);
+
+    /**
+     * Extract owner ID from a token for multi-tenant isolation
+     * @param token The token
+     * @return The owner ID for the authenticated user
+     */
+    Long getOwnerIdFromToken(String token);
 
     /**
      * Validate a token
