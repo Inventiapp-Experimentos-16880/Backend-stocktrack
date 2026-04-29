@@ -34,7 +34,7 @@ public class CategoryCommandServiceImpl implements CategoryCommandService {
     @Transactional
     public Optional<Category> handle(CreateCategoryCommand command) {
         // Validate that category name doesn't already exist
-        if (categoryRepository.existsByName(command.name())) {
+        if (categoryRepository.existsByNameAndOwnerId(command.name(), command.ownerId())) {
             throw new IllegalArgumentException("Category with name '" + command.name() + "' already exists");
         }
 
