@@ -37,8 +37,9 @@ public class Batch extends AuditableAbstractAggregateRoot<Batch> {
 
     /**
      * Creates a new Batch aggregate from the CreateBatchCommand.
+     * Sets ownerId for multi-tenant isolation.
      *
-     * @param command The create batch command
+     * @param command The create batch command (includes ownerId)
      */
     public Batch(CreateBatchCommand command) {
 
@@ -56,10 +57,17 @@ public class Batch extends AuditableAbstractAggregateRoot<Batch> {
         if (command.receptionDate() == null) {
             throw new IllegalArgumentException("receptionDate cannot be null");
         }
+        if (command.ownerId() == null || command.ownerId() <= 0) {
+            throw new IllegalArgumentException("ownerId cannot be null or non-positive");
+        }
+
         this.productId = command.productId();
         this.quantity = command.quantity();
         this.expirationDate = command.expirationDate();
         this.receptionDate = command.receptionDate();
+
+        // Set ownerId for multi-tenant isolation
+        this.setOwnerId(command.ownerId());
     }
 
     public void updateBatch(UpdateBatchCommand command) {

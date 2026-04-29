@@ -29,16 +29,16 @@ public class BatchQueryServiceImpl implements BatchQueryService {
 
     @Override
     public Optional<Batch> handle(GetBatchByIdQuery query) {
-        return batchRepository.findById(query.batchId());
+        return batchRepository.findByIdAndOwnerId(query.batchId(), query.ownerId());
     }
 
     @Override
     public List<Batch> handle(GetAllBatchesQuery query) {
-        return batchRepository.findAll();
+        return batchRepository.findAllByOwnerId(query.ownerId());
     }
 
     @Override
     public List<Batch> handle(GetAllBatchesByProductIdQuery query) {
-        return batchRepository.findByProductIdOrderByExpirationDateAsc(query.productId());
+        return batchRepository.findByProductIdAndOwnerIdOrderByExpirationDateAsc(query.productId(), query.ownerId());
     }
 }

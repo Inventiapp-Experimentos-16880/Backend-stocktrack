@@ -9,6 +9,7 @@ import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllBatchesQue
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetBatchByIdQuery;
 import com.inventiapp.stocktrack.inventory.domain.services.BatchCommandService;
 import com.inventiapp.stocktrack.inventory.domain.services.BatchQueryService;
+import com.inventiapp.stocktrack.iam.interfaces.acl.AuthenticatedUserContextFacade;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.BatchResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.CreateBatchResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.transform.BatchResourceFromEntityAssembler;
@@ -34,11 +35,14 @@ public class BatchController {
 
     private final BatchCommandService batchCommandService;
     private final BatchQueryService batchQueryService;
+    private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
     public BatchController(BatchCommandService batchCommandService,
-                           BatchQueryService batchQueryService) {
+                           BatchQueryService batchQueryService,
+                           AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.batchCommandService = batchCommandService;
         this.batchQueryService = batchQueryService;
+        this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
     @Operation(summary = "Create a batch", description = "Creates a new batch")
@@ -50,10 +54,11 @@ public class BatchController {
     @PostMapping(consumes = APPLICATION_JSON_VALUE)
     public ResponseEntity<BatchResource> createBatch(@Valid @RequestBody CreateBatchResource resource) {
         try {
-            var command = CreateBatchCommandFromResourceAssembler.toCommandFromResource(resource);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var command = CreateBatchCommandFromResourceAssembler.toCommandFromResource(resource, ownerId);
             Long createdId = batchCommandService.handle(command);
 
-            var opt = batchQueryService.handle(new GetBatchByIdQuery(createdId));
+            var opt = batchQueryService.handle(new GetBatchByIdQuery(createdId, ownerId));
             return opt.map(batch -> {
                         BatchResource response = BatchResourceFromEntityAssembler.toResource(batch);
                         return ResponseEntity.created(URI.create("/api/v1/batches/" + createdId)).body(response);
@@ -73,7 +78,8 @@ public class BatchController {
     @GetMapping("/{id}")
     public ResponseEntity<BatchResource> getById(@PathVariable Long id) {
         try {
-            Optional<Batch> opt = batchQueryService.handle(new GetBatchByIdQuery(id));
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            Optional<Batch> opt = batchQueryService.handle(new GetBatchByIdQuery(id, ownerId));
             return opt.map(BatchResourceFromEntityAssembler::toResource)
                     .map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.notFound().build());
@@ -88,7 +94,8 @@ public class BatchController {
     })
     @GetMapping
     public ResponseEntity<List<BatchResource>> getAll() {
-        List<Batch> batches = batchQueryService.handle(new GetAllBatchesQuery());
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        List<Batch> batches = batchQueryService.handle(new GetAllBatchesQuery(ownerId));
         List<BatchResource> resources = batches.stream()
                 .map(BatchResourceFromEntityAssembler::toResource)
                 .toList();

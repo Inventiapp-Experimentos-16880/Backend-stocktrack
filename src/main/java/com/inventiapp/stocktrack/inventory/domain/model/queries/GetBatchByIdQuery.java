@@ -4,8 +4,9 @@ package com.inventiapp.stocktrack.inventory.domain.model.queries;
  * Query to get a batch by id.
  *
  * @param batchId Batch id.
+ * @param ownerId Owner id.
  */
-public record GetBatchByIdQuery(Long batchId) {
+public record GetBatchByIdQuery(Long batchId, Long ownerId) {
     /**
      * Constructor validation.
      *
@@ -15,6 +16,9 @@ public record GetBatchByIdQuery(Long batchId) {
     public GetBatchByIdQuery {
         if (batchId == null || batchId <= 0) {
             throw new IllegalArgumentException("batchId is required and must be greater than 0");
+        }
+        if (ownerId == null || ownerId <= 0) {
+            throw new IllegalArgumentException("ownerId is required and must be greater than 0");
         }
     }
 }
