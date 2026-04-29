@@ -8,6 +8,7 @@ import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProductsQu
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetProductByIdQuery;
 import com.inventiapp.stocktrack.inventory.domain.services.ProductCommandService;
 import com.inventiapp.stocktrack.inventory.domain.services.ProductQueryService;
+import com.inventiapp.stocktrack.iam.interfaces.acl.AuthenticatedUserContextFacade;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.CreateProductResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.ProductResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.UpdateProductResource;
@@ -35,11 +36,14 @@ public class ProductController {
 
     private final ProductCommandService productCommandService;
     private final ProductQueryService productQueryService;
+    private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
     public ProductController(ProductCommandService productCommandService,
-                             ProductQueryService productQueryService) {
+                             ProductQueryService productQueryService,
+                             AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.productCommandService = productCommandService;
         this.productQueryService = productQueryService;
+        this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
     @Operation(summary = "Create a product", description = "Creates a new product")
@@ -50,7 +54,8 @@ public class ProductController {
     @PostMapping(consumes = APPLICATION_JSON_VALUE)
     public ResponseEntity<ProductResource> createProduct(@Valid @RequestBody CreateProductResource resource) {
         try {
-            var command = CreateProductCommandFromResourceAssembler.toCommandFromResource(resource);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var command = CreateProductCommandFromResourceAssembler.toCommandFromResource(resource, ownerId);
             Long createdId = productCommandService.handle(command);
 
             var opt = productQueryService.handle(new GetProductByIdQuery(createdId));
