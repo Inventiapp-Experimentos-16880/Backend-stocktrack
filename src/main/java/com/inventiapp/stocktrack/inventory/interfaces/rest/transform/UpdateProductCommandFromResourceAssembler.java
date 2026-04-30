@@ -15,12 +15,15 @@ public class UpdateProductCommandFromResourceAssembler {
      * @param resource  The {@link UpdateProductResource} to convert.
      * @return The resulting {@link UpdateProductCommand}.
      */
-    public static UpdateProductCommand toCommandFromResource(Long productId, UpdateProductResource resource) {
+    public static UpdateProductCommand toCommandFromResource(Long productId, UpdateProductResource resource, Long ownerId) {
         if (productId == null || productId <= 0) {
             throw new IllegalArgumentException("productId must be a positive number");
         }
         if (resource == null) {
             throw new IllegalArgumentException("UpdateProductResource cannot be null");
+        }
+        if (ownerId == null || ownerId <= 0) {
+            throw new IllegalArgumentException("ownerId must be a positive number");
         }
 
         return new UpdateProductCommand(
@@ -31,7 +34,8 @@ public class UpdateProductCommandFromResourceAssembler {
                 resource.providerId(),
                 resource.minStock(),
                 resource.unitPrice(),
-                resource.isActive()
+                resource.isActive(),
+                ownerId
         );
     }
 }

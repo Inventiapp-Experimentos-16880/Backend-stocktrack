@@ -44,7 +44,7 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public DashboardResource getDashboardData() {
         var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
-        List<Product> products = productQueryService.handle(new GetAllProductsQuery());
+        List<Product> products = productQueryService.handle(new GetAllProductsQuery(ownerId));
         List<Batch> batches = batchQueryService.handle(new GetAllBatchesQuery(ownerId));
         List<Sale> sales = saleQueryService.handle(new GetAllSalesQuery());
 

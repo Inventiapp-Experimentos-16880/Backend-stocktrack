@@ -38,8 +38,8 @@ public class KitCommandServiceImpl implements KitCommandService {
     @Override
     @Transactional
     public Optional<Kit> handle(CreateKitCommand command) {
-        // Validate that kit name doesn't already exist
-        if (kitRepository.existsByName(command.name())) {
+        // Validate that kit name doesn't already exist for this owner
+        if (kitRepository.existsByNameAndOwnerId(command.name(), command.ownerId())) {
             throw new IllegalArgumentException("Kit with name '" + command.name() + "' already exists");
         }
 
@@ -58,7 +58,7 @@ public class KitCommandServiceImpl implements KitCommandService {
     @Override
     @Transactional
     public void handle(DeleteKitCommand command) {
-        Kit kit = kitRepository.findById(command.kitId())
+        Kit kit = kitRepository.findByIdAndOwnerId(command.kitId(), command.ownerId())
                 .orElseThrow(() -> new KitNotFoundException(command.kitId()));
 
         kit.addDomainEvent(new KitDeletedEvent(kit, kit.getId()));

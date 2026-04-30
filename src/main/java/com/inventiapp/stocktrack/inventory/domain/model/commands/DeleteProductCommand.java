@@ -5,10 +5,13 @@ package com.inventiapp.stocktrack.inventory.domain.model.commands;
  *
  * @param productId the id of the product to delete. Cannot be null.
  */
-public record DeleteProductCommand(Long productId) {
+public record DeleteProductCommand(Long productId, Long ownerId) {
     public DeleteProductCommand {
         if (productId == null || productId <= 0) {
             throw new IllegalArgumentException("productId must be a positive number");
+        }
+        if (ownerId == null || ownerId <= 0) {
+            throw new IllegalArgumentException("ownerId must be a positive number");
         }
     }
 }

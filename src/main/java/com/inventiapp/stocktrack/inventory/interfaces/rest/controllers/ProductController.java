@@ -58,7 +58,7 @@ public class ProductController {
             var command = CreateProductCommandFromResourceAssembler.toCommandFromResource(resource, ownerId);
             Long createdId = productCommandService.handle(command);
 
-            var opt = productQueryService.handle(new GetProductByIdQuery(createdId));
+            var opt = productQueryService.handle(new GetProductByIdQuery(createdId, ownerId));
             return opt.map(product -> {
                         ProductResource response = ProductResourceFromEntityAssembler.toResource(product);
                         return ResponseEntity.created(URI.create("/api/v1/products/" + createdId)).body(response);
@@ -78,7 +78,8 @@ public class ProductController {
     @GetMapping("/{id}")
     public ResponseEntity<ProductResource> getById(@PathVariable Long id) {
         try {
-            Optional<Product> opt = productQueryService.handle(new GetProductByIdQuery(id));
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            Optional<Product> opt = productQueryService.handle(new GetProductByIdQuery(id, ownerId));
             return opt.map(ProductResourceFromEntityAssembler::toResource)
                     .map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.notFound().build());
@@ -93,7 +94,8 @@ public class ProductController {
     })
     @GetMapping
     public ResponseEntity<List<ProductResource>> getAll() {
-        List<Product> products = productQueryService.handle(new GetAllProductsQuery());
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        List<Product> products = productQueryService.handle(new GetAllProductsQuery(ownerId));
         List<ProductResource> resources = products.stream()
                 .map(ProductResourceFromEntityAssembler::toResource)
                 .toList();
@@ -110,7 +112,8 @@ public class ProductController {
     public ResponseEntity<ProductResource> updateProduct(@PathVariable Long id,
                                                          @Valid @RequestBody UpdateProductResource resource) {
         try {
-            var command = UpdateProductCommandFromResourceAssembler.toCommandFromResource(id, resource);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var command = UpdateProductCommandFromResourceAssembler.toCommandFromResource(id, resource, ownerId);
             Optional<Product> updated = productCommandService.handle(command);
 
             return updated
@@ -133,7 +136,8 @@ public class ProductController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         try {
-            var command = new DeleteProductCommand(id);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var command = new DeleteProductCommand(id, ownerId);
             productCommandService.handle(command);
             return ResponseEntity.noContent().build();
         } catch (ProductNotFoundException ex) {

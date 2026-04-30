@@ -66,7 +66,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             throw new ProviderNotFoundException(providerId);
         }
 
-        if (productRepository.existsByNameAndProviderId(command.name(), command.providerId())) {
+        if (productRepository.existsByNameAndProviderIdAndOwnerId(command.name(), command.providerId(), command.ownerId())) {
             throw new ProductAlreadyExistsException(command.name());
         }
 
@@ -104,7 +104,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
      */
     @Override
     public Optional<Product> handle(UpdateProductCommand command) {
-        Product product = productRepository.findById(command.productId())
+        Product product = productRepository.findByIdAndOwnerId(command.productId(), command.ownerId())
                 .orElseThrow(() -> new ProductNotFoundException(command.productId()));
 
         Long categoryId = Long.parseLong(command.categoryId());
@@ -148,7 +148,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
      */
     @Override
     public void handle(DeleteProductCommand command) {
-        Product product = productRepository.findById(command.productId())
+        Product product = productRepository.findByIdAndOwnerId(command.productId(), command.ownerId())
                 .orElseThrow(() -> new ProductNotFoundException(command.productId()));
 
         product.addDomainEvent(new ProductDeletedEvent(product, product.getId()));

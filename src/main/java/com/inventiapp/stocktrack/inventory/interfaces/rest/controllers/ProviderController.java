@@ -71,7 +71,7 @@ public class ProviderController {
             var command = CreateProviderCommandFromResourceAssembler.toCommandFromResource(resource, ownerId);
             Long createdId = providerCommandService.handle(command);
 
-            var opt = providerQueryService.handle(new GetProviderByIdQuery(createdId));
+            var opt = providerQueryService.handle(new GetProviderByIdQuery(createdId, ownerId));
             return opt.map(provider -> {
                         ProviderResource response = ProviderResourceFromEntityAssembler.toResource(provider);
                         return ResponseEntity.created(URI.create("/api/v1/providers/" + createdId)).body(response);
@@ -97,7 +97,8 @@ public class ProviderController {
     @GetMapping("/{id}")
     public ResponseEntity<ProviderResource> getById(@PathVariable Long id) {
         try {
-            var query = new GetProviderByIdQuery(id);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var query = new GetProviderByIdQuery(id, ownerId);
             var opt = providerQueryService.handle(query);
             return opt.map(ProviderResourceFromEntityAssembler::toResource)
                     .map(ResponseEntity::ok)
@@ -118,7 +119,8 @@ public class ProviderController {
     })
     @GetMapping
     public ResponseEntity<List<ProviderResource>> getAll() {
-        var query = new GetAllProvidersQuery();
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var query = new GetAllProvidersQuery(ownerId);
         var providers = providerQueryService.handle(query);
         var resources = providers.stream()
                 .map(ProviderResourceFromEntityAssembler::toResource)
@@ -143,7 +145,8 @@ public class ProviderController {
     public ResponseEntity<ProviderResource> updateProvider(@PathVariable Long id,
                                                            @Valid @RequestBody UpdateProviderResource resource) {
         try {
-            var command = UpdateProviderCommandFromResourceAssembler.toCommandFromResource(id, resource);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var command = UpdateProviderCommandFromResourceAssembler.toCommandFromResource(id, resource, ownerId);
             Optional<Provider> updated = providerCommandService.handle(command);
 
             return updated
@@ -172,7 +175,8 @@ public class ProviderController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProvider(@PathVariable Long id) {
         try {
-            var command = new DeleteProviderCommand(id);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var command = new DeleteProviderCommand(id, ownerId);
             providerCommandService.handle(command);
             return ResponseEntity.noContent().build();
         } catch (ProviderNotFoundException ex) {

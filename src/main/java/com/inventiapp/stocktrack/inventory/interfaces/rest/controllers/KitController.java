@@ -100,7 +100,8 @@ public class KitController {
     })
     @GetMapping
     public ResponseEntity<List<KitResource>> getAllKits() {
-        var getAllKitsQuery = new GetAllKitsQuery();
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var getAllKitsQuery = new GetAllKitsQuery(ownerId);
         var kits = kitQueryService.handle(getAllKitsQuery);
         var kitResources = kits.stream()
                 .map(KitResourceFromEntityAssembler::toResourceFromEntity)
@@ -125,7 +126,8 @@ public class KitController {
     @GetMapping("/{id}")
     public ResponseEntity<KitResource> getKitById(@PathVariable Long id) {
         try {
-            var query = new GetKitByIdQuery(id);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var query = new GetKitByIdQuery(id, ownerId);
             var kit = kitQueryService.handle(query);
             return kit.map(k -> ResponseEntity.ok(
                     KitResourceFromEntityAssembler.toResourceFromEntity(k)))
@@ -151,7 +153,8 @@ public class KitController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteKit(@PathVariable Long id) {
         try {
-            var command = new DeleteKitCommand(id);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var command = new DeleteKitCommand(id, ownerId);
             kitCommandService.handle(command);
             return ResponseEntity.noContent().build();
         } catch (KitNotFoundException ex) {

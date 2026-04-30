@@ -110,7 +110,8 @@ public class BatchController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBatch(@PathVariable Long id) {
         try {
-            var command = new DeleteBatchCommand(id);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var command = new DeleteBatchCommand(id, ownerId);
             batchCommandService.handle(command);
             return ResponseEntity.noContent().build();
         } catch (BatchNotFoundException ex) {
@@ -129,7 +130,8 @@ public class BatchController {
     @PutMapping("/{id}")
     public ResponseEntity<BatchResource> updateBatch(@PathVariable Long id, @Valid @RequestBody CreateBatchResource resource) {
         try {
-            var command = new UpdateBatchCommand(id, resource.quantity());
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var command = new UpdateBatchCommand(id, resource.quantity(), ownerId);
             Optional<Batch> updatedOpt = batchCommandService.handle(command);
             return updatedOpt.map(BatchResourceFromEntityAssembler::toResource)
                     .map(ResponseEntity::ok)

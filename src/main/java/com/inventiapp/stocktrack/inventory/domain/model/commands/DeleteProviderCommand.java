@@ -6,7 +6,7 @@ package com.inventiapp.stocktrack.inventory.domain.model.commands;
  * @param providerId the provider id.
  *                   Cannot be null or less than 1
  */
-public record DeleteProviderCommand(Long providerId) {
+public record DeleteProviderCommand(Long providerId, Long ownerId) {
 
     /**
      * Constructor
@@ -16,6 +16,9 @@ public record DeleteProviderCommand(Long providerId) {
     public DeleteProviderCommand {
         if (providerId == null || providerId <= 0) {
             throw new IllegalArgumentException("providerId cannot be null or less than 1");
+        }
+        if (ownerId == null || ownerId <= 0) {
+            throw new IllegalArgumentException("ownerId cannot be null or less than 1");
         }
     }
 }

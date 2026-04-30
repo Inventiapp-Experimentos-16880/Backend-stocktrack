@@ -96,7 +96,8 @@ public class CategoryController {
     })
     @GetMapping
     public ResponseEntity<List<CategoryResource>> getAllCategories() {
-        var getAllCategoriesQuery = new GetAllCategoriesQuery();
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var getAllCategoriesQuery = new GetAllCategoriesQuery(ownerId);
         var categories = categoryQueryService.handle(getAllCategoriesQuery);
         var categoryResources = categories.stream()
                 .map(CategoryResourceFromEntityAssembler::toResourceFromEntity)
