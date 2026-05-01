@@ -87,7 +87,8 @@ public class AuthenticationController {
         var token = tokenService.generateToken(
                 user.getId(),
                 user.getEmail(),
-                user.getRolesAsStringList()
+                user.getRolesAsStringList(),
+                user.getOwnerId()
         );
         var authenticatedUserResource = AuthenticatedUserResourceFromEntityAssembler.toResourceFromEntity(user, token);
         

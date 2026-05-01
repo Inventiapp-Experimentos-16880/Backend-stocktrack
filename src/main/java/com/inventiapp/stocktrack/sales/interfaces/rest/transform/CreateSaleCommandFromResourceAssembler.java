@@ -6,6 +6,7 @@ import com.inventiapp.stocktrack.sales.domain.model.commands.SaleDetailItem;
 import com.inventiapp.stocktrack.sales.interfaces.rest.resources.CreateSaleResource;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -23,7 +24,7 @@ public class CreateSaleCommandFromResourceAssembler {
             throw new IllegalArgumentException("resource cannot be null");
         }
 
-        List<SaleDetailItem> details = new java.util.ArrayList<>();
+        List<SaleDetailItem> details = new ArrayList<>();
 
         // Process products
         if (resource.products() != null) {

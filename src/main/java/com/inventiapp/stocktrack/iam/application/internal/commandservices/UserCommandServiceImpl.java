@@ -76,7 +76,8 @@ public class UserCommandServiceImpl implements UserCommandService {
         var token = tokenService.generateToken(
                 userEntity.getId(),
                 userEntity.getEmail(),
-                userEntity.getRolesAsStringList()
+                userEntity.getRolesAsStringList(),
+                userEntity.getOwnerId()
         );
         return Optional.of(ImmutablePair.of(userEntity, token));
     }

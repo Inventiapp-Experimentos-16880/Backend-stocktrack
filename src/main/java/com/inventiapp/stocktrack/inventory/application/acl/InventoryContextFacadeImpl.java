@@ -73,8 +73,9 @@ public class InventoryContextFacadeImpl implements InventoryContextFacade {
         List<Batch> batches = batchQueryService.handle(getAllBatchesByProductIdQuery);
 
         List<Batch> sorted = batches.stream()
-                .sorted(Comparator.comparing(Batch::getExpirationDate))
+                .filter(batch -> batch.getExpirationDate().after(new java.util.Date()))
                 .toList();
+
 
         int remaining = quantity;
 
