@@ -14,10 +14,11 @@ public class CreateProductCommandFromResourceAssembler {
      * Converts a CreateProductResource to a CreateProductCommand.
      *
      * @param resource the incoming resource from the API
+     * @param ownerId current authenticated owner's id
      * @return the command ready to be handled by the application layer
      * @throws IllegalArgumentException if resource is null
      */
-    public static CreateProductCommand toCommandFromResource(CreateProductResource resource) {
+    public static CreateProductCommand toCommandFromResource(CreateProductResource resource, Long ownerId) {
         if (resource == null) {
             throw new IllegalArgumentException("CreateProductResource cannot be null");
         }
@@ -29,7 +30,8 @@ public class CreateProductCommandFromResourceAssembler {
                 resource.providerId(),
                 resource.minStock(),
                 resource.unitPrice(),
-                resource.isActive()
+                resource.isActive(),
+                ownerId
         );
     }
 }

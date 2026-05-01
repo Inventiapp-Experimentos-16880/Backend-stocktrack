@@ -51,6 +51,13 @@ public class TokenServiceImpl implements BearerTokenService {
      * Build a JWT token with the given user information
      */
     private String buildTokenWithDefaultParameters(Long userId, String email, List<String> roles) {
+        return buildTokenWithDefaultParameters(userId, email, roles, null);
+    }
+
+    /**
+     * Build a JWT token with the given user information and owner ID
+     */
+    private String buildTokenWithDefaultParameters(Long userId, String email, List<String> roles, Long ownerId) {
         Date issuedAt = new Date();
         Date expiration = new Date(issuedAt.getTime() + (long) expirationDays * 24 * 60 * 60 * 1000);
 
@@ -65,6 +72,14 @@ public class TokenServiceImpl implements BearerTokenService {
             builder.claim("roles", roles);
         }
 
+        // Add ownerId claim if provided (ownerId equals userId for admins, or the admin ID for workers)
+        if (ownerId != null) {
+            builder.claim("ownerId", ownerId);
+        } else {
+            // Default: if ownerId not provided, use userId (admin case)
+            builder.claim("ownerId", userId);
+        }
+
         return builder.signWith(getSigningKey())
                 .compact();
     }
@@ -72,6 +87,11 @@ public class TokenServiceImpl implements BearerTokenService {
     @Override
     public String generateToken(Long userId, String email, List<String> roles) {
         return buildTokenWithDefaultParameters(userId, email, roles);
+    }
+
+    @Override
+    public String generateToken(Long userId, String email, List<String> roles, Long ownerId) {
+        return buildTokenWithDefaultParameters(userId, email, roles, ownerId);
     }
 
     @Override
@@ -134,6 +154,22 @@ public class TokenServiceImpl implements BearerTokenService {
         }
         
         return new ArrayList<>();
+    }
+
+    @Override
+    public Long getOwnerIdFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        Object ownerIdObj = claims.get("ownerId");
+        if (ownerIdObj instanceof Number) {
+            return ((Number) ownerIdObj).longValue();
+        }
+
+        return null;
     }
 
     @Override

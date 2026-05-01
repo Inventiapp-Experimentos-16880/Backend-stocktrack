@@ -8,6 +8,7 @@ package com.inventiapp.stocktrack.inventory.domain.model.commands;
  * @param phoneNumber the provider phone number. Cannot be null or blank.
  * @param email       the provider email. Cannot be null or blank.
  * @param ruc         the provider RUC (Peruvian tax id). Cannot be null or blank.
+ * @param ownerId     the owner ID for multi-tenant isolation. Cannot be null or non-positive.
  * @throws IllegalArgumentException if any required parameter is null or blank.
  * @since 1.0
  */
@@ -16,7 +17,8 @@ public record CreateProviderCommand(
         String lastName,
         String phoneNumber,
         String email,
-        String ruc
+        String ruc,
+        Long ownerId
 ) {
     public CreateProviderCommand {
         if (firstName == null || firstName.isBlank()) {
@@ -33,6 +35,9 @@ public record CreateProviderCommand(
         }
         if (ruc == null || ruc.isBlank()) {
             throw new IllegalArgumentException("ruc cannot be null or blank");
+        }
+        if (ownerId == null || ownerId <= 0) {
+            throw new IllegalArgumentException("ownerId cannot be null or non-positive");
         }
     }
 }

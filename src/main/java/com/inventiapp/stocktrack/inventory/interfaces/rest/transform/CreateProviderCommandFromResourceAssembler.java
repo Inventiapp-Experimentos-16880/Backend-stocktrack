@@ -14,10 +14,11 @@ public class CreateProviderCommandFromResourceAssembler {
      * Converts a CreateProviderResource to a CreateProviderCommand.
      *
      * @param resource the incoming create resource (must not be null)
+     * @param ownerId current authenticated owner's id
      * @return the CreateProviderCommand
      * @throws IllegalArgumentException if resource is null
      */
-    public static CreateProviderCommand toCommandFromResource(CreateProviderResource resource) {
+    public static CreateProviderCommand toCommandFromResource(CreateProviderResource resource, Long ownerId) {
         if (resource == null) {
             throw new IllegalArgumentException("CreateProviderResource cannot be null");
         }
@@ -27,7 +28,8 @@ public class CreateProviderCommandFromResourceAssembler {
                 resource.lastName(),
                 resource.phoneNumber(),
                 resource.email(),
-                resource.ruc()
+                resource.ruc(),
+                ownerId
         );
     }
 }

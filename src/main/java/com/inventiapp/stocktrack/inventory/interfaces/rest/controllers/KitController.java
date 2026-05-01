@@ -6,6 +6,7 @@ import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllKitsQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetKitByIdQuery;
 import com.inventiapp.stocktrack.inventory.domain.services.KitCommandService;
 import com.inventiapp.stocktrack.inventory.domain.services.KitQueryService;
+import com.inventiapp.stocktrack.iam.interfaces.acl.AuthenticatedUserContextFacade;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.CreateKitResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.KitResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.transform.CreateKitCommandFromResourceAssembler;
@@ -37,6 +38,7 @@ public class KitController {
 
     private final KitCommandService kitCommandService;
     private final KitQueryService kitQueryService;
+    private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
     /**
      * Constructor for KitController.
@@ -48,9 +50,11 @@ public class KitController {
      */
     public KitController(
             KitCommandService kitCommandService,
-            KitQueryService kitQueryService) {
+            KitQueryService kitQueryService,
+            AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.kitCommandService = kitCommandService;
         this.kitQueryService = kitQueryService;
+        this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
     /**
@@ -71,8 +75,9 @@ public class KitController {
     @PostMapping(consumes = APPLICATION_JSON_VALUE)
     public ResponseEntity<KitResource> createKit(@Valid @RequestBody CreateKitResource resource) {
         try {
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
             var kit = kitCommandService
-                    .handle(CreateKitCommandFromResourceAssembler.toCommandFromResource(resource));
+                    .handle(CreateKitCommandFromResourceAssembler.toCommandFromResource(resource, ownerId));
             return kit.map(k -> new ResponseEntity<>(
                     KitResourceFromEntityAssembler.toResourceFromEntity(k), CREATED))
                     .orElseGet(() -> ResponseEntity.badRequest().build());
@@ -95,7 +100,8 @@ public class KitController {
     })
     @GetMapping
     public ResponseEntity<List<KitResource>> getAllKits() {
-        var getAllKitsQuery = new GetAllKitsQuery();
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var getAllKitsQuery = new GetAllKitsQuery(ownerId);
         var kits = kitQueryService.handle(getAllKitsQuery);
         var kitResources = kits.stream()
                 .map(KitResourceFromEntityAssembler::toResourceFromEntity)
@@ -120,7 +126,8 @@ public class KitController {
     @GetMapping("/{id}")
     public ResponseEntity<KitResource> getKitById(@PathVariable Long id) {
         try {
-            var query = new GetKitByIdQuery(id);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var query = new GetKitByIdQuery(id, ownerId);
             var kit = kitQueryService.handle(query);
             return kit.map(k -> ResponseEntity.ok(
                     KitResourceFromEntityAssembler.toResourceFromEntity(k)))
@@ -146,7 +153,8 @@ public class KitController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteKit(@PathVariable Long id) {
         try {
-            var command = new DeleteKitCommand(id);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var command = new DeleteKitCommand(id, ownerId);
             kitCommandService.handle(command);
             return ResponseEntity.noContent().build();
         } catch (KitNotFoundException ex) {

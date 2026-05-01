@@ -33,7 +33,7 @@ public class ProductQueryServiceImpl implements ProductQueryService {
      */
     @Override
     public Optional<Product> handle(GetProductByIdQuery query) {
-        return productRepository.findById(query.productId());
+        return productRepository.findByIdAndOwnerId(query.productId(), query.ownerId());
     }
 
     /**
@@ -43,6 +43,6 @@ public class ProductQueryServiceImpl implements ProductQueryService {
      */
     @Override
     public List<Product> handle(GetAllProductsQuery query) {
-        return productRepository.findAll();
+        return productRepository.findAllByOwnerId(query.ownerId());
     }
 }

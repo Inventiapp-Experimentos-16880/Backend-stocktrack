@@ -16,7 +16,8 @@ public record UpdateProviderCommand(
         String lastName,
         String phoneNumber,
         String email,
-        String ruc
+        String ruc,
+        Long ownerId
 ) {
     /**
      * Constructor
@@ -42,6 +43,9 @@ public record UpdateProviderCommand(
         }
         if (ruc == null || ruc.isBlank()) {
             throw new IllegalArgumentException("ruc cannot be null or blank");
+        }
+        if (ownerId == null || ownerId <= 0) {
+            throw new IllegalArgumentException("ownerId cannot be null or non-positive");
         }
     }
 }

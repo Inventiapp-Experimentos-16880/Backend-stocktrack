@@ -78,7 +78,7 @@ public class BatchCommandServiceImpl implements BatchCommandService {
      */
     @Override
     public void handle(DeleteBatchCommand command) {
-        Batch batch = batchRepository.findById(command.batchId())
+        Batch batch = batchRepository.findByIdAndOwnerId(command.batchId(), command.ownerId())
                 .orElseThrow(() -> new BatchNotFoundException(command.batchId()));
 
         batch.addDomainEvent(new BatchDeletedEvent(batch, batch.getId()));
@@ -93,7 +93,7 @@ public class BatchCommandServiceImpl implements BatchCommandService {
 
     @Override
     public Optional<Batch> handle(UpdateBatchCommand command) {
-        Batch batch = batchRepository.findById(command.batchId())
+        Batch batch = batchRepository.findByIdAndOwnerId(command.batchId(), command.ownerId())
                 .orElseThrow(() -> new BatchNotFoundException(command.batchId()));
 
         if (!productRepository.existsById(batch.getProductId())) {

@@ -3,6 +3,7 @@ package com.inventiapp.stocktrack.inventory.interfaces.rest.controllers;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllBatchesByProductIdQuery;
 import com.inventiapp.stocktrack.inventory.domain.services.BatchQueryService;
 import com.inventiapp.stocktrack.inventory.domain.services.ProductQueryService;
+import com.inventiapp.stocktrack.iam.interfaces.acl.AuthenticatedUserContextFacade;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.BatchResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.transform.BatchResourceFromEntityAssembler;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,11 +27,14 @@ public class ProductBatchesController {
 
     private final ProductQueryService productQueryService;
     private final BatchQueryService batchQueryService;
+    private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
     public ProductBatchesController(ProductQueryService productQueryService,
-                                    BatchQueryService batchQueryService) {
+                                    BatchQueryService batchQueryService,
+                                    AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.productQueryService = productQueryService;
         this.batchQueryService = batchQueryService;
+        this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
     @GetMapping
@@ -39,7 +43,8 @@ public class ProductBatchesController {
             @ApiResponse(responseCode = "400", description = "Bad request")})
     public ResponseEntity<List<BatchResource>> getAllBatchesByProductId(@PathVariable Long productId) {
         try {
-            var getAllBatchesByProductIdQuery = new GetAllBatchesByProductIdQuery(productId);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var getAllBatchesByProductIdQuery = new GetAllBatchesByProductIdQuery(productId, ownerId);
             var batches = batchQueryService.handle(getAllBatchesByProductIdQuery);
             var batchesResources = batches.stream()
                     .map(BatchResourceFromEntityAssembler::toResource)

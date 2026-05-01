@@ -14,7 +14,8 @@ public class UpdateBatchCommandFromEntityResource {
 
         return new UpdateBatchCommand(
                 batchId,
-                resource.quantity()
+                resource.quantity(),
+                resource.ownerId()
         );
     }
 }

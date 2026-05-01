@@ -32,13 +32,22 @@ public class Category extends AuditableAbstractAggregateRoot<Category> {
     /**
      * @summary Constructor.
      * It creates a new Category instance based on the CreateCategoryCommand command.
-     * @param command - the CreateCategoryCommand command
+     * Sets ownerId for multi-tenant isolation.
+     *
+     * @param command - the CreateCategoryCommand command (includes ownerId)
      */
     public Category(CreateCategoryCommand command) {
         if (command.name() == null || command.name().isBlank()) {
             throw new IllegalArgumentException("Category name is required");
         }
+        if (command.ownerId() == null || command.ownerId() <= 0) {
+            throw new IllegalArgumentException("ownerId cannot be null or non-positive");
+        }
+
         this.name = command.name().trim();
         this.description = command.description() != null ? command.description().trim() : null;
+
+        // Set ownerId for multi-tenant isolation
+        this.setOwnerId(command.ownerId());
     }
 }

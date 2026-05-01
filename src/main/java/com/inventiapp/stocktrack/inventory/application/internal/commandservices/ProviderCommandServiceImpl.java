@@ -76,7 +76,7 @@ public class ProviderCommandServiceImpl implements ProviderCommandService {
     @Override
     public Optional<Provider> handle(UpdateProviderCommand command) {
         Long providerId = command.providerId();
-        Provider provider = providerRepository.findById(providerId)
+        Provider provider = providerRepository.findByIdAndOwnerId(providerId, command.ownerId())
                 .orElseThrow(() -> new ProviderNotFoundException(providerId));
 
         try {
@@ -113,7 +113,7 @@ public class ProviderCommandServiceImpl implements ProviderCommandService {
     @Override
     public void handle(DeleteProviderCommand command) {
         Long providerId = command.providerId();
-        Provider provider = providerRepository.findById(providerId)
+        Provider provider = providerRepository.findByIdAndOwnerId(providerId, command.ownerId())
                 .orElseThrow(() -> new ProviderNotFoundException(providerId));
 
         try {

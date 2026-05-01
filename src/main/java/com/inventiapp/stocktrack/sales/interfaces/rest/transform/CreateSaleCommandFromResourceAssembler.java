@@ -6,6 +6,7 @@ import com.inventiapp.stocktrack.sales.domain.model.commands.SaleDetailItem;
 import com.inventiapp.stocktrack.sales.interfaces.rest.resources.CreateSaleResource;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -18,12 +19,12 @@ public class CreateSaleCommandFromResourceAssembler {
         CreateSaleCommandFromResourceAssembler.inventoryService = inventoryService;
     }
 
-    public static CreateSaleCommand toCommandFromResource(CreateSaleResource resource) {
+    public static CreateSaleCommand toCommandFromResource(CreateSaleResource resource, Long ownerId) {
         if (resource == null) {
             throw new IllegalArgumentException("resource cannot be null");
         }
 
-        List<SaleDetailItem> details = new java.util.ArrayList<>();
+        List<SaleDetailItem> details = new ArrayList<>();
 
         // Process products
         if (resource.products() != null) {
@@ -98,6 +99,6 @@ public class CreateSaleCommandFromResourceAssembler {
                 .mapToDouble(i -> i.unitPrice() * i.quantity())
                 .sum();
 
-        return new CreateSaleCommand(resource.staffUserId(), total, details);
+        return new CreateSaleCommand(resource.staffUserId(), total, details, ownerId);
     }
 }

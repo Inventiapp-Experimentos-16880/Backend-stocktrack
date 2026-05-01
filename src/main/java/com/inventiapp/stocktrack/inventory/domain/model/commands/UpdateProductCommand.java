@@ -20,7 +20,8 @@ public record UpdateProductCommand(
         String providerId,
         Integer minStock,
         Double unitPrice,
-        Boolean isActive
+        Boolean isActive,
+        Long ownerId
 ) {
     public UpdateProductCommand {
         if (productId == null || productId <= 0) {
@@ -43,6 +44,9 @@ public record UpdateProductCommand(
         }
         if (isActive == null) {
             throw new IllegalArgumentException("isActive cannot be null");
+        }
+        if (ownerId == null || ownerId <= 0) {
+            throw new IllegalArgumentException("ownerId cannot be null or non-positive");
         }
     }
 }

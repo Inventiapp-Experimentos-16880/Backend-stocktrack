@@ -14,14 +14,14 @@ public class CreateKitCommandFromResourceAssembler {
     /**
      * Converts a CreateKitResource to a CreateKitCommand.
      * @param resource CreateKitResource to convert
+     * @param ownerId current authenticated owner's id
      * @return CreateKitCommand created from the resource
      */
-    public static CreateKitCommand toCommandFromResource(CreateKitResource resource) {
+    public static CreateKitCommand toCommandFromResource(CreateKitResource resource, Long ownerId) {
         List<CreateKitCommand.KitItemCommand> items = resource.items().stream()
                 .map(item -> new CreateKitCommand.KitItemCommand(item.productId(), item.quantity(), item.price()))
                 .collect(Collectors.toList());
         
-        return new CreateKitCommand(resource.name(), items);
+        return new CreateKitCommand(resource.name(), items, ownerId);
     }
 }
-

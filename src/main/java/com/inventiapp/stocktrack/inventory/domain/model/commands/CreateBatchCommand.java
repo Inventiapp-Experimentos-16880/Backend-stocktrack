@@ -9,13 +9,15 @@ import java.util.Date;
  * @param quantity the stock quantity. Cannot be null or negative.
  * @param expirationDate the expiration date. Cannot be null.
  * @param receptionDate the reception date. Cannot be null.
+ * @param ownerId the owner ID for multi-tenant isolation. Cannot be null or non-positive.
  * @since 1.0
  */
 public record CreateBatchCommand(
         Long productId,
         Integer quantity,
         Date expirationDate,
-        Date receptionDate
+        Date receptionDate,
+        Long ownerId
 ) {
     /**
      * Constructor validation.
@@ -34,6 +36,9 @@ public record CreateBatchCommand(
         }
         if (receptionDate == null) {
             throw new IllegalArgumentException("receptionDate cannot be null");
+        }
+        if (ownerId == null || ownerId <= 0) {
+            throw new IllegalArgumentException("ownerId cannot be null or non-positive");
         }
     }
 }
