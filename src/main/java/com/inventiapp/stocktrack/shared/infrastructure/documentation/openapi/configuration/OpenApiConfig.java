@@ -21,7 +21,7 @@ public class OpenApiConfig {
         return new OpenAPI()
             .servers(List.of(
                 new Server()
-                    .url("https://stocktrack-backend-production.up.railway.app")
+                    .url("https://backend-stocktrack-production.up.railway.app")
                     .description("Production Server"),
                 new Server()
                     .url("http://localhost:8080")
