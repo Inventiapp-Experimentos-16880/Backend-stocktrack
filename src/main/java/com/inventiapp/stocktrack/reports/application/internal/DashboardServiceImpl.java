@@ -46,7 +46,7 @@ public class DashboardServiceImpl implements DashboardService {
         var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
         List<Product> products = productQueryService.handle(new GetAllProductsQuery(ownerId));
         List<Batch> batches = batchQueryService.handle(new GetAllBatchesQuery(ownerId));
-        List<Sale> sales = saleQueryService.handle(new GetAllSalesQuery());
+        List<Sale> sales = saleQueryService.handle(new GetAllSalesQuery(ownerId));
 
         DashboardStatsResource stats = calculateStats(products, batches, sales);
         List<MonthlyIncomeResource> monthlyIncome = calculateMonthlyIncome(sales);

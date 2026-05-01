@@ -57,7 +57,7 @@ public class SalesController {
                         .body(new ErrorResponse("Failed to create sale"));
             }
 
-            var sale = salesQueryService.handle(new GetSaleByIdQuery(saleId));
+            var sale = salesQueryService.handle(new GetSaleByIdQuery(saleId, ownerId));
             if (sale.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
@@ -86,7 +86,8 @@ public class SalesController {
             @ApiResponse(responseCode = "404", description = "Sale not found"),
     })
     public ResponseEntity<SaleResource> getSaleById(@PathVariable Long id) {
-        var getSaleByIdQuery = new GetSaleByIdQuery(id);
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var getSaleByIdQuery = new GetSaleByIdQuery(id, ownerId);
         var sale = salesQueryService.handle(getSaleByIdQuery);
         if (sale.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -105,11 +106,11 @@ public class SalesController {
             @ApiResponse(responseCode = "404", description = "Sale not found"),
     })
     public ResponseEntity<List<SaleResource>> getAllSales() {
-        var sales = salesQueryService.handle(new GetAllSalesQuery());
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var sales = salesQueryService.handle(new GetAllSalesQuery(ownerId));
         var saleResources = sales.stream()
                 .map(SaleResourceFromEntityAssembler::toResourceFromEntity)
                 .toList();
         return ResponseEntity.ok(saleResources);
     }
 }
-
