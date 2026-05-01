@@ -14,10 +14,11 @@ public class CreateBatchCommandFromResourceAssembler {
      * Converts a CreateBatchResource to a CreateBatchCommand.
      *
      * @param resource the incoming resource from the API
+     * @param ownerId current authenticated owner's id
      * @return the command ready to be handled by the application layer
      * @throws IllegalArgumentException if resource is null
      */
-    public static CreateBatchCommand toCommandFromResource(CreateBatchResource resource) {
+    public static CreateBatchCommand toCommandFromResource(CreateBatchResource resource, Long ownerId) {
         if (resource == null) {
             throw new IllegalArgumentException("CreateBatchResource cannot be null");
         }
@@ -26,8 +27,8 @@ public class CreateBatchCommandFromResourceAssembler {
                 resource.productId(),
                 resource.quantity(),
                 resource.expirationDate(),
-                resource.receptionDate()
+                resource.receptionDate(),
+                ownerId
         );
     }
 }
-

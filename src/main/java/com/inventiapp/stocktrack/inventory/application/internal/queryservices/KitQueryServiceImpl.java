@@ -35,7 +35,7 @@ public class KitQueryServiceImpl implements KitQueryService {
      */
     @Override
     public List<Kit> handle(GetAllKitsQuery query) {
-        return kitRepository.findAllWithItems();
+        return kitRepository.findAllWithItemsByOwnerId(query.ownerId());
     }
 
     /**
@@ -43,7 +43,7 @@ public class KitQueryServiceImpl implements KitQueryService {
      */
     @Override
     public Optional<Kit> handle(GetKitByIdQuery query) {
-        return kitRepository.findByIdWithItems(query.kitId());
+        return kitRepository.findByIdWithItemsAndOwnerId(query.kitId(), query.ownerId());
     }
 }
 

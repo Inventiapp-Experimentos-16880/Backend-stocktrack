@@ -3,6 +3,7 @@ package com.inventiapp.stocktrack.inventory.interfaces.rest.controllers;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllCategoriesQuery;
 import com.inventiapp.stocktrack.inventory.domain.services.CategoryCommandService;
 import com.inventiapp.stocktrack.inventory.domain.services.CategoryQueryService;
+import com.inventiapp.stocktrack.iam.interfaces.acl.AuthenticatedUserContextFacade;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.CategoryResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.CreateCategoryResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.transform.CategoryResourceFromEntityAssembler;
@@ -33,6 +34,7 @@ public class CategoryController {
 
     private final CategoryCommandService categoryCommandService;
     private final CategoryQueryService categoryQueryService;
+    private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
     /**
      * Constructor for CategoryController.
@@ -44,9 +46,11 @@ public class CategoryController {
      */
     public CategoryController(
             CategoryCommandService categoryCommandService,
-            CategoryQueryService categoryQueryService) {
+            CategoryQueryService categoryQueryService,
+            AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.categoryCommandService = categoryCommandService;
         this.categoryQueryService = categoryQueryService;
+        this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
     /**
@@ -67,8 +71,9 @@ public class CategoryController {
     @PostMapping
     public ResponseEntity<CategoryResource> createCategory(@Valid @RequestBody CreateCategoryResource resource) {
         try {
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
             var category = categoryCommandService
-                    .handle(CreateCategoryCommandFromResourceAssembler.toCommandFromResource(resource));
+                    .handle(CreateCategoryCommandFromResourceAssembler.toCommandFromResource(resource, ownerId));
             return category.map(cat -> new ResponseEntity<>(
                     CategoryResourceFromEntityAssembler.toResourceFromEntity(cat), CREATED))
                     .orElseGet(() -> ResponseEntity.badRequest().build());
@@ -91,7 +96,8 @@ public class CategoryController {
     })
     @GetMapping
     public ResponseEntity<List<CategoryResource>> getAllCategories() {
-        var getAllCategoriesQuery = new GetAllCategoriesQuery();
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var getAllCategoriesQuery = new GetAllCategoriesQuery(ownerId);
         var categories = categoryQueryService.handle(getAllCategoriesQuery);
         var categoryResources = categories.stream()
                 .map(CategoryResourceFromEntityAssembler::toResourceFromEntity)

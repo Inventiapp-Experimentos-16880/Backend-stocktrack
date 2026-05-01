@@ -46,7 +46,7 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     /**
      * Creates a new Product aggregate from the CreateProductCommand.
      *
-     * @param command The create product command
+     * @param command The create product command (includes ownerId for multi-tenant isolation)
      */
     public Product(CreateProductCommand command) {
 
@@ -70,6 +70,9 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         if (command.isActive() == null) {
             throw new IllegalArgumentException("isActive is required");
         }
+        if (command.ownerId() == null || command.ownerId() <= 0) {
+            throw new IllegalArgumentException("ownerId cannot be null or non-positive");
+        }
 
         this.name = normalize(command.name());
         this.description = command.description() != null ? command.description().trim() : null;
@@ -78,6 +81,9 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         this.minStock = command.minStock();
         this.unitPrice = command.unitPrice();
         this.isActive = command.isActive();
+
+        // Set ownerId for multi-tenant isolation
+        this.setOwnerId(command.ownerId());
     }
 
     /**

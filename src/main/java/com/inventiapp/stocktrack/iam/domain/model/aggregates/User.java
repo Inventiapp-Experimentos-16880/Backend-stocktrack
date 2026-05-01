@@ -74,6 +74,18 @@ public class User extends AuditableAbstractAggregateRoot<User> {
     }
 
     /**
+     * Public method to set ownerId for this user.
+     * For ADMIN users: ownerId = user's own ID
+     * For WORKER users: ownerId = the admin who created them (their owner ID)
+     * Used during user creation/signup before persistence.
+     *
+     * @param ownerId The owner ID for multi-tenant isolation
+     */
+    public void assignOwnerId(Long ownerId) {
+        super.setOwnerId(ownerId);
+    }
+
+    /**
      * Add a single role to the user
      * @param role Role to add
      * @return this user instance

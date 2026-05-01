@@ -11,6 +11,7 @@ import com.inventiapp.stocktrack.reports.interfaces.rest.resources.*;
 import com.inventiapp.stocktrack.sales.domain.model.aggregates.Sale;
 import com.inventiapp.stocktrack.sales.domain.model.queries.GetAllSalesQuery;
 import com.inventiapp.stocktrack.sales.domain.services.SaleQueryService;
+import com.inventiapp.stocktrack.iam.interfaces.acl.AuthenticatedUserContextFacade;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -27,21 +28,25 @@ public class DashboardServiceImpl implements DashboardService {
     private final ProductQueryService productQueryService;
     private final BatchQueryService batchQueryService;
     private final SaleQueryService saleQueryService;
+    private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
     public DashboardServiceImpl(
             ProductQueryService productQueryService,
             BatchQueryService batchQueryService,
-            SaleQueryService saleQueryService) {
+            SaleQueryService saleQueryService,
+            AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.productQueryService = productQueryService;
         this.batchQueryService = batchQueryService;
         this.saleQueryService = saleQueryService;
+        this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
     @Override
     public DashboardResource getDashboardData() {
-        List<Product> products = productQueryService.handle(new GetAllProductsQuery());
-        List<Batch> batches = batchQueryService.handle(new GetAllBatchesQuery());
-        List<Sale> sales = saleQueryService.handle(new GetAllSalesQuery());
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        List<Product> products = productQueryService.handle(new GetAllProductsQuery(ownerId));
+        List<Batch> batches = batchQueryService.handle(new GetAllBatchesQuery(ownerId));
+        List<Sale> sales = saleQueryService.handle(new GetAllSalesQuery(ownerId));
 
         DashboardStatsResource stats = calculateStats(products, batches, sales);
         List<MonthlyIncomeResource> monthlyIncome = calculateMonthlyIncome(sales);

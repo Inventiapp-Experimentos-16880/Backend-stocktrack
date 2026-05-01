@@ -31,6 +31,10 @@ public class Sale extends AuditableAbstractAggregateRoot<Sale> {
     private List<SaleDetail> details = new ArrayList<>();
 
     public Sale(CreateSaleCommand command) {
+        if (command.ownerId() == null || command.ownerId() <= 0) {
+            throw new IllegalArgumentException("ownerId cannot be null or non-positive");
+        }
+
         this.staffUserId = new StaffUserId(command.staffUserId());
         this.totalAmount = 0;
         this.details = new ArrayList<>();
@@ -43,6 +47,9 @@ public class Sale extends AuditableAbstractAggregateRoot<Sale> {
             //mostrar resultado de la suma y el total esperado en el error
             throw new IllegalArgumentException("Total amount mismatch: calculated " + this.totalAmount + ", expected " + command.totalAmount());
         }
+
+        // Set ownerId for multi-tenant isolation
+        this.setOwnerId(command.ownerId());
     }
 
     public void addDetail(ProductId productId, int quantity, double unitPrice) {

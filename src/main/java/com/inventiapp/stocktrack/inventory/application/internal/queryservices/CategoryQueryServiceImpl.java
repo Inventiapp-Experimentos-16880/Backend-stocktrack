@@ -31,7 +31,7 @@ public class CategoryQueryServiceImpl implements CategoryQueryService {
      */
     @Override
     public List<Category> handle(GetAllCategoriesQuery query) {
-        return categoryRepository.findAll();
+        return categoryRepository.findAllByOwnerId(query.ownerId());
     }
 }
 

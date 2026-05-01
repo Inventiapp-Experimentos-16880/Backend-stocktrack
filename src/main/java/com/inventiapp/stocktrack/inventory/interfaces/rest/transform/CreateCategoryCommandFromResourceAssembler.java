@@ -11,10 +11,10 @@ public class CreateCategoryCommandFromResourceAssembler {
     /**
      * Converts a CreateCategoryResource to a CreateCategoryCommand.
      * @param resource CreateCategoryResource to convert
+     * @param ownerId current authenticated owner's id
      * @return CreateCategoryCommand created from the resource
      */
-    public static CreateCategoryCommand toCommandFromResource(CreateCategoryResource resource) {
-        return new CreateCategoryCommand(resource.name(), resource.description());
+    public static CreateCategoryCommand toCommandFromResource(CreateCategoryResource resource, Long ownerId) {
+        return new CreateCategoryCommand(resource.name(), resource.description(), ownerId);
     }
 }
-

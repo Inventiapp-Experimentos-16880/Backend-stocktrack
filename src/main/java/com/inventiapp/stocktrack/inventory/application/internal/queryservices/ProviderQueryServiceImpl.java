@@ -33,7 +33,7 @@ public class ProviderQueryServiceImpl implements ProviderQueryService {
      */
     @Override
     public List<Provider> handle(GetAllProvidersQuery query) {
-        return providerRepository.findAll();
+        return providerRepository.findAllByOwnerId(query.ownerId());
     }
 
     /**
@@ -43,6 +43,6 @@ public class ProviderQueryServiceImpl implements ProviderQueryService {
      */
     @Override
     public Optional<Provider> handle(GetProviderByIdQuery query) {
-        return providerRepository.findById(query.providerId());
+        return providerRepository.findByIdAndOwnerId(query.providerId(), query.ownerId());
     }
 }

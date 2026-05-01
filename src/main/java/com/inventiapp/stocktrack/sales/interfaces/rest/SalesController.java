@@ -4,6 +4,7 @@ import com.inventiapp.stocktrack.sales.domain.model.queries.GetAllSalesQuery;
 import com.inventiapp.stocktrack.sales.domain.model.queries.GetSaleByIdQuery;
 import com.inventiapp.stocktrack.sales.domain.services.SaleCommandService;
 import com.inventiapp.stocktrack.sales.domain.services.SaleQueryService;
+import com.inventiapp.stocktrack.iam.interfaces.acl.AuthenticatedUserContextFacade;
 import com.inventiapp.stocktrack.sales.interfaces.rest.resources.CreateSaleResource;
 import com.inventiapp.stocktrack.sales.interfaces.rest.resources.ErrorResponse;
 import com.inventiapp.stocktrack.sales.interfaces.rest.resources.SaleResource;
@@ -29,10 +30,13 @@ public class SalesController {
 
     private final SaleCommandService salesCommandService;
     private final SaleQueryService salesQueryService;
+    private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
-    public SalesController(SaleCommandService salesCommandService, SaleQueryService salesQueryService) {
+    public SalesController(SaleCommandService salesCommandService, SaleQueryService salesQueryService,
+                           AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.salesCommandService = salesCommandService;
         this.salesQueryService = salesQueryService;
+        this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
     @PostMapping
@@ -44,7 +48,8 @@ public class SalesController {
     })
     public ResponseEntity<?> createSale(@RequestBody CreateSaleResource resource) {
         try {
-            var createSaleCommand = CreateSaleCommandFromResourceAssembler.toCommandFromResource(resource);
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            var createSaleCommand = CreateSaleCommandFromResourceAssembler.toCommandFromResource(resource, ownerId);
 
             var saleId = salesCommandService.handle(createSaleCommand);
             if (saleId == null || saleId == 0L) {
@@ -52,7 +57,7 @@ public class SalesController {
                         .body(new ErrorResponse("Failed to create sale"));
             }
 
-            var sale = salesQueryService.handle(new GetSaleByIdQuery(saleId));
+            var sale = salesQueryService.handle(new GetSaleByIdQuery(saleId, ownerId));
             if (sale.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
@@ -81,7 +86,8 @@ public class SalesController {
             @ApiResponse(responseCode = "404", description = "Sale not found"),
     })
     public ResponseEntity<SaleResource> getSaleById(@PathVariable Long id) {
-        var getSaleByIdQuery = new GetSaleByIdQuery(id);
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var getSaleByIdQuery = new GetSaleByIdQuery(id, ownerId);
         var sale = salesQueryService.handle(getSaleByIdQuery);
         if (sale.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -100,11 +106,11 @@ public class SalesController {
             @ApiResponse(responseCode = "404", description = "Sale not found"),
     })
     public ResponseEntity<List<SaleResource>> getAllSales() {
-        var sales = salesQueryService.handle(new GetAllSalesQuery());
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var sales = salesQueryService.handle(new GetAllSalesQuery(ownerId));
         var saleResources = sales.stream()
                 .map(SaleResourceFromEntityAssembler::toResourceFromEntity)
                 .toList();
         return ResponseEntity.ok(saleResources);
     }
 }
-

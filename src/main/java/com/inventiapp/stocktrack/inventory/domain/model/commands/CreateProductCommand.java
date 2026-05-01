@@ -10,6 +10,7 @@ package com.inventiapp.stocktrack.inventory.domain.model.commands;
  * @param minStock   the minimum stock threshold (alert level). Cannot be null or negative.
  * @param unitPrice  the unit price. Cannot be null and must be greater than 0.
  * @param isActive   whether the product is active (available). Cannot be null.
+ * @param ownerId    the owner ID for multi-tenant isolation. Cannot be null or non-positive.
  * @since 1.0
  */
 public record CreateProductCommand(
@@ -19,7 +20,8 @@ public record CreateProductCommand(
         String providerId,
         Integer minStock,
         Double unitPrice,
-        Boolean isActive
+        Boolean isActive,
+        Long ownerId
 ) {
     /**
      * Constructor validation.
@@ -44,6 +46,9 @@ public record CreateProductCommand(
         }
         if (isActive == null) {
             throw new IllegalArgumentException("isActive cannot be null");
+        }
+        if (ownerId == null || ownerId <= 0) {
+            throw new IllegalArgumentException("ownerId cannot be null or non-positive");
         }
     }
 }

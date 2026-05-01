@@ -7,11 +7,13 @@ import java.util.List;
  * 
  * @param name The kit name. Cannot be null or blank.
  * @param items The list of products with their prices. Cannot be null or empty.
+ * @param ownerId The owner ID for multi-tenant isolation. Cannot be null or non-positive.
  * @since 1.0
  */
 public record CreateKitCommand(
         String name,
-        List<KitItemCommand> items
+        List<KitItemCommand> items,
+        Long ownerId
 ) {
     /**
      * Constructor validation.
@@ -23,6 +25,9 @@ public record CreateKitCommand(
         }
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("Kit must have at least one product");
+        }
+        if (ownerId == null || ownerId <= 0) {
+            throw new IllegalArgumentException("ownerId cannot be null or non-positive");
         }
     }
 

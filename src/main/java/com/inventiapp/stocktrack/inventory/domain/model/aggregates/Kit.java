@@ -38,7 +38,9 @@ public class Kit extends AuditableAbstractAggregateRoot<Kit> {
     /**
      * Constructor for Kit.
      * Creates a new Kit instance based on the CreateKitCommand.
-     * @param command The create kit command
+     * Sets ownerId for multi-tenant isolation.
+     *
+     * @param command The create kit command (includes ownerId)
      */
     public Kit(CreateKitCommand command) {
         if (command.name() == null || command.name().isBlank()) {
@@ -47,7 +49,10 @@ public class Kit extends AuditableAbstractAggregateRoot<Kit> {
         if (command.items() == null || command.items().isEmpty()) {
             throw new IllegalArgumentException("Kit must have at least one product");
         }
-        
+        if (command.ownerId() == null || command.ownerId() <= 0) {
+            throw new IllegalArgumentException("ownerId cannot be null or non-positive");
+        }
+
         this.name = command.name().trim();
         this.items = new ArrayList<>();
         
@@ -63,6 +68,9 @@ public class Kit extends AuditableAbstractAggregateRoot<Kit> {
             }
             this.items.add(new KitItem(this, item.productId(), item.quantity(), item.price()));
         }
+
+        // Set ownerId for multi-tenant isolation
+        this.setOwnerId(command.ownerId());
     }
 }
 

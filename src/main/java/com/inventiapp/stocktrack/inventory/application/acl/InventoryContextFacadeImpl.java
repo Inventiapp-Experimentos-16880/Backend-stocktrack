@@ -12,6 +12,7 @@ import com.inventiapp.stocktrack.inventory.domain.services.KitQueryService;
 import com.inventiapp.stocktrack.inventory.domain.services.ProductCommandService;
 import com.inventiapp.stocktrack.inventory.domain.services.ProductQueryService;
 import com.inventiapp.stocktrack.inventory.interfaces.acl.InventoryContextFacade;
+import com.inventiapp.stocktrack.iam.interfaces.acl.AuthenticatedUserContextFacade;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,20 +28,23 @@ public class InventoryContextFacadeImpl implements InventoryContextFacade {
     private final BatchQueryService batchQueryService;
     private final BatchCommandService batchCommandService;
     private final KitQueryService kitQueryService;
+    private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
 
-    public InventoryContextFacadeImpl(ProductQueryService productQueryService, ProductCommandService productCommandService, BatchQueryService batchQueryService, BatchCommandService batchCommandService, KitQueryService kitQueryService) {
+    public InventoryContextFacadeImpl(ProductQueryService productQueryService, ProductCommandService productCommandService, BatchQueryService batchQueryService, BatchCommandService batchCommandService, KitQueryService kitQueryService, AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.productQueryService = productQueryService;
         this.productCommandService = productCommandService;
         this.batchQueryService = batchQueryService;
         this.batchCommandService = batchCommandService;
         this.kitQueryService = kitQueryService;
+        this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
 
     @Override
     public Long getProductById(Long productId) {
-        var getProductByIdQuery = new GetProductByIdQuery(productId);
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var getProductByIdQuery = new GetProductByIdQuery(productId, ownerId);
         var result = productQueryService.handle(getProductByIdQuery);
         return result.map(product -> product.getId()).orElse(null);
 
@@ -48,7 +52,8 @@ public class InventoryContextFacadeImpl implements InventoryContextFacade {
 
     @Override
     public Boolean checkProductStockAvailability(Long productId, Integer requiredQuantity) {
-        var getProductByIdQuery = new GetProductByIdQuery(productId);
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var getProductByIdQuery = new GetProductByIdQuery(productId, ownerId);
         var result = productQueryService.handle(getProductByIdQuery);
         return result.map(product -> product.getMinStock() >= requiredQuantity).orElse(false);
     }
@@ -63,12 +68,14 @@ public class InventoryContextFacadeImpl implements InventoryContextFacade {
             throw new IllegalArgumentException("quantity inválida");
         }
 
-        var getAllBatchesByProductIdQuery = new GetAllBatchesByProductIdQuery(productId);
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var getAllBatchesByProductIdQuery = new GetAllBatchesByProductIdQuery(productId, ownerId);
         List<Batch> batches = batchQueryService.handle(getAllBatchesByProductIdQuery);
 
         List<Batch> sorted = batches.stream()
-                .sorted(Comparator.comparing(Batch::getExpirationDate))
+                .filter(batch -> batch.getExpirationDate().after(new java.util.Date()))
                 .toList();
+
 
         int remaining = quantity;
 
@@ -80,7 +87,7 @@ public class InventoryContextFacadeImpl implements InventoryContextFacade {
             int toReduce = Math.min(available, remaining);
             int newQuantity = available - toReduce;
 
-            var updateCommand = new UpdateBatchCommand(batch.getId(), newQuantity);
+            var updateCommand = new UpdateBatchCommand(batch.getId(), newQuantity, authenticatedUserContextFacade.getCurrentOwnerId());
             var updated = batchCommandService.handle(updateCommand);
             if (updated == null || updated.isEmpty()) {
                 throw new IllegalStateException("No se pudo actualizar el batch " + batch.getId());
@@ -96,21 +103,22 @@ public class InventoryContextFacadeImpl implements InventoryContextFacade {
 
     @Override
     public Double getProductUnitPrice(Long productId) {
-        var getProductByIdQuery = new GetProductByIdQuery(productId);
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var getProductByIdQuery = new GetProductByIdQuery(productId, ownerId);
         var result = productQueryService.handle(getProductByIdQuery);
         return result.map(product -> product.getUnitPrice()).orElse(null);
     }
 
     @Override
     public Long getKitById(Long kitId) {
-        var getKitByIdQuery = new GetKitByIdQuery(kitId);
+        var getKitByIdQuery = new GetKitByIdQuery(kitId, authenticatedUserContextFacade.getCurrentOwnerId());
         var result = kitQueryService.handle(getKitByIdQuery);
         return result.map(Kit::getId).orElse(null);
     }
 
     @Override
     public Double getKitTotalPrice(Long kitId) {
-        var getKitByIdQuery = new GetKitByIdQuery(kitId);
+        var getKitByIdQuery = new GetKitByIdQuery(kitId, authenticatedUserContextFacade.getCurrentOwnerId());
         var result = kitQueryService.handle(getKitByIdQuery);
         if (result.isEmpty()) {
             return null;
@@ -125,7 +133,7 @@ public class InventoryContextFacadeImpl implements InventoryContextFacade {
 
     @Override
     public List<Object[]> getKitProductIdsQuantitiesAndPrices(Long kitId) {
-        var getKitByIdQuery = new GetKitByIdQuery(kitId);
+        var getKitByIdQuery = new GetKitByIdQuery(kitId, authenticatedUserContextFacade.getCurrentOwnerId());
         var result = kitQueryService.handle(getKitByIdQuery);
         if (result.isEmpty()) {
             return List.of();

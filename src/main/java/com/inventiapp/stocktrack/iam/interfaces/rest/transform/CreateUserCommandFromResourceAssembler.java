@@ -13,14 +13,14 @@ public class CreateUserCommandFromResourceAssembler {
     /**
      * Converts a CreateUserResource to a CreateUserCommand.
      * @param resource The {@link CreateUserResource} resource to convert.
+     * @param ownerId current authenticated owner's id
      * @return The {@link CreateUserCommand} command.
      */
-    public static CreateUserCommand toCommandFromResource(CreateUserResource resource) {
-        List<String> permissions = resource.permissions() != null 
+    public static CreateUserCommand toCommandFromResource(CreateUserResource resource, Long ownerId) {
+        List<String> permissions = resource.permissions() != null
                 ? new ArrayList<>(resource.permissions()) 
                 : new ArrayList<>();
         
-        return new CreateUserCommand(resource.email(), resource.password(), permissions);
+        return new CreateUserCommand(resource.email(), resource.password(), permissions, ownerId);
     }
 }
-

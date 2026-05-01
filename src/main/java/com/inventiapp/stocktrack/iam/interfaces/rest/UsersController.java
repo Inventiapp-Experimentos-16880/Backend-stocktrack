@@ -5,6 +5,7 @@ import com.inventiapp.stocktrack.iam.domain.model.queries.GetAllUsersQuery;
 import com.inventiapp.stocktrack.iam.domain.model.queries.GetUserByIdQuery;
 import com.inventiapp.stocktrack.iam.domain.services.UserCommandService;
 import com.inventiapp.stocktrack.iam.domain.services.UserQueryService;
+import com.inventiapp.stocktrack.iam.interfaces.acl.AuthenticatedUserContextFacade;
 import com.inventiapp.stocktrack.iam.interfaces.rest.resources.AuthenticatedUserResource;
 import com.inventiapp.stocktrack.iam.interfaces.rest.resources.CreateUserResource;
 import com.inventiapp.stocktrack.iam.interfaces.rest.resources.UpdateUserResource;
@@ -37,6 +38,7 @@ public class UsersController {
     private final UserQueryService userQueryService;
     private final UserCommandService userCommandService;
     private final TokenService tokenService;
+    private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
     /**
      * Constructor
@@ -44,10 +46,11 @@ public class UsersController {
      * @param userCommandService The {@link UserCommandService} instance
      * @param tokenService The {@link TokenService} instance
      */
-    public UsersController(UserQueryService userQueryService, UserCommandService userCommandService, TokenService tokenService) {
+    public UsersController(UserQueryService userQueryService, UserCommandService userCommandService, TokenService tokenService, AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.userQueryService = userQueryService;
         this.userCommandService = userCommandService;
         this.tokenService = tokenService;
+        this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
     /**
@@ -104,7 +107,8 @@ public class UsersController {
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     public ResponseEntity<AuthenticatedUserResource> createUser(@RequestBody CreateUserResource resource) {
-        var command = CreateUserCommandFromResourceAssembler.toCommandFromResource(resource);
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        var command = CreateUserCommandFromResourceAssembler.toCommandFromResource(resource, ownerId);
         var result = userCommandService.handle(command);
         
         return result
@@ -112,7 +116,8 @@ public class UsersController {
                     var token = tokenService.generateToken(
                             user.getId(),
                             user.getEmail(),
-                            user.getRolesAsStringList()
+                            user.getRolesAsStringList(),
+                            user.getOwnerId()
                     );
                     var authenticatedUserResource = AuthenticatedUserResourceFromEntityAssembler.toResourceFromEntity(user, token);
                     return new ResponseEntity<>(authenticatedUserResource, HttpStatus.CREATED);
