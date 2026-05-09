@@ -9,13 +9,12 @@ import com.inventiapp.stocktrack.inventory.domain.model.valueobject.Ruc;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-class StocktrackBackendApplicationTests {
+class ProviderServiceTest {
 
     @Test
     void testCreateProvider() {
