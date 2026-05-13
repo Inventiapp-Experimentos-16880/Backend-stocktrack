@@ -1,6 +1,5 @@
-package com.inventiapp.stocktrack;
+package com.inventiapp.stocktrack.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.CreateBatchCommand;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.DeleteBatchCommand;
 import com.inventiapp.stocktrack.inventory.domain.exceptions.BatchNotFoundException;
@@ -56,7 +55,7 @@ class BatchControllerTest {
     }
 
     @Test
-    void createBatch_shouldReturn201_andBodyWithBatch() throws Exception {
+    void createBatchTest() throws Exception {
         // Arrange
         long ownerId = 1L;
         when(authenticatedUserContextFacade.getCurrentOwnerId()).thenReturn(ownerId);
@@ -95,7 +94,7 @@ class BatchControllerTest {
     }
 
     @Test
-    void getAllBatches_shouldReturn200_andList() throws Exception {
+    void getAllBatchesTest() throws Exception {
         // Arrange
         long ownerId = 2L;
         when(authenticatedUserContextFacade.getCurrentOwnerId()).thenReturn(ownerId);
@@ -119,7 +118,7 @@ class BatchControllerTest {
     }
 
     @Test
-    void deleteBatch_whenNotFound_shouldReturn404() throws Exception {
+    void deleteBatchTest() throws Exception {
         // Arrange
         long ownerId = 3L;
         long batchId = 999L;
