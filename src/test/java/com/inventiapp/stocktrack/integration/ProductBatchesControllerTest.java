@@ -1,4 +1,4 @@
-package com.inventiapp.stocktrack;
+package com.inventiapp.stocktrack.integration;
 
 import com.inventiapp.stocktrack.inventory.domain.model.commands.CreateBatchCommand;
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Batch;
@@ -49,7 +49,7 @@ class ProductBatchesControllerTest {
     }
 
     @Test
-    void getAllBatchesByProductId_shouldReturn200_andList() throws Exception {
+    void getAllBatchesTest() throws Exception {
         // Arrange
         long ownerId = 5L;
         long productId = 10L;
@@ -77,7 +77,7 @@ class ProductBatchesControllerTest {
     }
 
     @Test
-    void getAllBatchesByProductId_whenInvalidRequest_shouldReturn400() throws Exception {
+    void getAllBatchesByProductIdTest() throws Exception {
         // Arrange
         long ownerId = 7L;
         long productId = 20L;

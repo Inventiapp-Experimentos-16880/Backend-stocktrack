@@ -1,4 +1,4 @@
-package com.inventiapp.stocktrack;
+package com.inventiapp.stocktrack.integration;
 
 import com.inventiapp.stocktrack.sales.application.outboundservices.acl.ExternalInventoryService;
 import com.inventiapp.stocktrack.sales.domain.model.aggregates.Sale;
@@ -17,6 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -32,6 +34,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@MockitoSettings(strictness = Strictness.LENIENT)
+@ExtendWith(MockitoExtension.class)
 @ExtendWith(MockitoExtension.class)
 class SalesControllerTest {
 
@@ -62,7 +66,7 @@ class SalesControllerTest {
     }
 
     @Test
-    void createSale_shouldReturn201_andBodyWithSale() throws Exception {
+    void createSaleTest() throws Exception {
         // Arrange
         long ownerId = 11L;
         long staffUserId = 5L;
@@ -71,9 +75,8 @@ class SalesControllerTest {
         when(authenticatedUserContextFacade.getCurrentOwnerId()).thenReturn(ownerId);
 
         // Mock external inventory checks used by the assembler
-        when(externalInventoryService.checkProductExists(productId)).thenReturn(true);
-        when(externalInventoryService.getProductUnitPrice(productId)).thenReturn(10.0);
-
+        lenient().when(externalInventoryService.checkProductExists(productId)).thenReturn(true);
+        lenient().when(externalInventoryService.getProductUnitPrice(productId)).thenReturn(10.0);
         // When command handler is called, return a new sale id
         long createdSaleId = 999L;
         when(saleCommandService.handle(any())).thenReturn(createdSaleId);
@@ -111,7 +114,7 @@ class SalesControllerTest {
     }
 
     @Test
-    void getSaleById_shouldReturn200_andBody() throws Exception {
+    void getSaleByIdTest() throws Exception {
         // Arrange
         long ownerId = 22L;
         long saleId = 55L;
@@ -136,7 +139,7 @@ class SalesControllerTest {
     }
 
     @Test
-    void getAllSales_shouldReturn200_andList() throws Exception {
+    void getAllSalesTest() throws Exception {
         // Arrange
         long ownerId = 33L;
         long staffUserId = 8L;

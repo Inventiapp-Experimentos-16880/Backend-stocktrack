@@ -1,4 +1,4 @@
-package com.inventiapp.stocktrack;
+package com.inventiapp.stocktrack.Entities;
 
 import com.inventiapp.stocktrack.sales.application.internal.commandservices.SaleCommandServiceImpl;
 import com.inventiapp.stocktrack.sales.domain.model.aggregates.Sale;

@@ -1,4 +1,4 @@
-package com.inventiapp.stocktrack;
+package com.inventiapp.stocktrack.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.CreateKitCommand;
@@ -6,7 +6,6 @@ import com.inventiapp.stocktrack.inventory.domain.model.commands.DeleteKitComman
 import com.inventiapp.stocktrack.inventory.domain.exceptions.KitNotFoundException;
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Kit;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllKitsQuery;
-import com.inventiapp.stocktrack.inventory.domain.model.queries.GetKitByIdQuery;
 import com.inventiapp.stocktrack.inventory.domain.services.KitCommandService;
 import com.inventiapp.stocktrack.inventory.domain.services.KitQueryService;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.controllers.KitController;
@@ -57,7 +56,7 @@ class KitControllerTest {
     }
 
     @Test
-    void createKit_shouldReturn201_andBodyWithKit() throws Exception {
+    void createKitTest() throws Exception {
         // Arrange
         long ownerId = 1L;
         var kitItem = Collections.singletonList(new CreateKitCommand.KitItemCommand(1L, 2, 0.3));
@@ -92,7 +91,7 @@ class KitControllerTest {
     }
 
     @Test
-    void getAllKits_shouldReturn200_andList() throws Exception {
+    void getAllKitsTest() throws Exception {
         // Arrange
         long ownerId = 2L;
         var kitItem = Collections.singletonList(new CreateKitCommand.KitItemCommand(1L, 2, 0.3));
@@ -115,7 +114,7 @@ class KitControllerTest {
     }
 
     @Test
-    void deleteKit_whenNotFound_shouldReturn404() throws Exception {
+    void deleteKitTest() throws Exception {
         // Arrange
         long ownerId = 3L;
         long kitId = 999L;

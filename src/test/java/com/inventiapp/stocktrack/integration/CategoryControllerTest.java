@@ -1,4 +1,4 @@
-package com.inventiapp.stocktrack;
+package com.inventiapp.stocktrack.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Category;
@@ -52,7 +52,7 @@ class CategoryControllerTest {
     }
 
     @Test
-    void createCategory_shouldReturn201_andBodyWithCategory() throws Exception {
+    void createCategoryTest() throws Exception {
         // Arrange
         long ownerId = 1L;
         when(authenticatedUserContextFacade.getCurrentOwnerId()).thenReturn(ownerId);
@@ -84,7 +84,7 @@ class CategoryControllerTest {
     }
 
     @Test
-    void getAllCategories_shouldReturn200_andList() throws Exception {
+    void getAllCategoriesTest() throws Exception {
         // Arrange
         long ownerId = 2L;
         when(authenticatedUserContextFacade.getCurrentOwnerId()).thenReturn(ownerId);
@@ -107,7 +107,7 @@ class CategoryControllerTest {
     }
 
     @Test
-    void createCategory_whenNameAlreadyExists_shouldReturn400() throws Exception {
+    void createExistentCategoryTest() throws Exception {
         // Arrange
         long ownerId = 3L;
         when(authenticatedUserContextFacade.getCurrentOwnerId()).thenReturn(ownerId);

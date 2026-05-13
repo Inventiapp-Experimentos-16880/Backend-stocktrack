@@ -1,4 +1,4 @@
-package com.inventiapp.stocktrack;
+package com.inventiapp.stocktrack.Entities;
 
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Provider;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.CreateProviderCommand;

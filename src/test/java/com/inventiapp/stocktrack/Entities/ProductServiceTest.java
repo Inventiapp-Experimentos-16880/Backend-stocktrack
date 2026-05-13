@@ -1,4 +1,4 @@
-package com.inventiapp.stocktrack;
+package com.inventiapp.stocktrack.Entities;
 
 import com.inventiapp.stocktrack.inventory.application.internal.commandservices.ProductCommandServiceImpl;
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Product;
@@ -36,7 +36,7 @@ class ProductServiceTest {
     private ProductCommandServiceImpl productCommandService;
 
     @Test
-    void createProduct_shouldReturnGeneratedId_andCallSave() {
+    void createProductTest() {
         // arrange
         CreateProductCommand createCommand = new CreateProductCommand(
                 "Widget",
@@ -73,7 +73,7 @@ class ProductServiceTest {
     }
 
     @Test
-    void updateProduct_shouldSaveAndReturnOptionalWithSavedProduct() {
+    void updateProductTest() {
         // arrange
         UpdateProductCommand updateCommand = new UpdateProductCommand(
                 5L,
@@ -106,7 +106,7 @@ class ProductServiceTest {
     }
 
     @Test
-    void deleteProduct_shouldFindAndDeleteProduct() {
+    void deleteProductTest() {
         // arrange
         DeleteProductCommand deleteCommand = new DeleteProductCommand(7L, 1L);
 

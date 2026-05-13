@@ -1,11 +1,9 @@
-package com.inventiapp.stocktrack;
+package com.inventiapp.stocktrack.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inventiapp.stocktrack.inventory.domain.exceptions.ProviderNotFoundException;
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Provider;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.CreateProviderCommand;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.DeleteProviderCommand;
-import com.inventiapp.stocktrack.inventory.domain.model.commands.UpdateProviderCommand;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProvidersQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetProviderByIdQuery;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.controllers.ProviderController;
@@ -56,7 +54,7 @@ class ProviderControllerTest {
     }
 
     @Test
-    void createProvider_shouldReturn201_andBodyWithProvider() throws Exception {
+    void createProviderTest() throws Exception {
         // arrange
         long ownerId = 1L;
         when(authenticatedUserContextFacade.getCurrentOwnerId()).thenReturn(ownerId);
@@ -96,7 +94,7 @@ class ProviderControllerTest {
     }
 
     @Test
-    void getAllProviders_shouldReturn200_andList() throws Exception {
+    void getAllProvidersTest() throws Exception {
         // arrange
         long ownerId = 2L;
         when(authenticatedUserContextFacade.getCurrentOwnerId()).thenReturn(ownerId);
@@ -119,7 +117,7 @@ class ProviderControllerTest {
     }
 
     @Test
-    void deleteProvider_whenNotFound_shouldReturn404() throws Exception {
+    void deleteProviderTest() throws Exception {
         // arrange
         long ownerId = 3L;
         long providerId = 999L;
