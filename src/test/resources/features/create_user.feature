@@ -7,7 +7,7 @@ Scenario: Registro exitoso de nuevo administrador
  Then el sistema debe encriptar la contraseña
  And redirigir al usuario al Dashboard principal con una sesión activa
 
- Feature: Gestión del Catálogo (US06)
+Feature: Gestión del Catálogo (US06)
 Scenario: Registro de un nuevo producto base
  Given que el administrador ha iniciado sesión
  And se encuentra en el módulo de "Inventario"
@@ -37,7 +37,7 @@ Scenario: Registro de lote con fecha de caducidad
  Then el sistema debe crear un nuevo lote vinculado al proveedor
  And incrementar el stock total del producto en el panel de control
 
- Feature: Sistema de Alertas Inteligentes (US14)
+Feature: Sistema de Alertas Inteligentes (US14)
 Scenario: Notificación automática por stock bajo
  Given que un producto tiene configurado un "Stock Mínimo" de "10" unidades
  And el stock actual es de "11" unidades
@@ -51,4 +51,3 @@ Scenario: Identificación de lotes por vencer
  Then el sistema debe listar dicho lote en la sección de "Alertas Pendientes"
  And marcar el registro con un color de advertencia (rojo/amarillo)
 
-### 6.1.4. Core System Tests.
