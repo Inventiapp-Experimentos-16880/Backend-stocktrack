@@ -79,4 +79,13 @@ public interface BatchRepository extends JpaRepository<Batch, Long> {
      */
     @Query("SELECT b FROM Batch b WHERE b.ownerId = :ownerId ORDER BY b.id")
     List<Batch> findAllByOwnerId(@Param("ownerId") Long ownerId);
+
+    /**
+     * Sum the total quantity of batches for a product and owner
+     * @param productId product ID
+     * @param ownerId owner ID for multi-tenant isolation
+     * @return total quantity
+     */
+    @Query("SELECT COALESCE(SUM(b.quantity), 0) FROM Batch b WHERE b.productId = :productId AND b.ownerId = :ownerId")
+    Integer sumQuantityByProductIdAndOwnerId(@Param("productId") Long productId, @Param("ownerId") Long ownerId);
 }
