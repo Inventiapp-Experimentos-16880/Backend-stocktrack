@@ -1,6 +1,7 @@
 package com.inventiapp.stocktrack.inventory.domain.services;
 
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Provider;
+import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProvidersIncludingDeletedQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProvidersQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetProviderByIdQuery;
 
@@ -28,4 +29,6 @@ public interface ProviderQueryService {
      * @return optional with found provider
      */
     Optional<Provider> handle(GetProviderByIdQuery query);
+
+    List<Provider> handle(GetAllProvidersIncludingDeletedQuery query);
 }

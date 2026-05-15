@@ -12,6 +12,7 @@ import com.inventiapp.stocktrack.shared.domain.model.aggregates.AuditableAbstrac
 import jakarta.persistence.*;
 import lombok.Getter;
 import org.apache.logging.log4j.util.Strings;
+import org.hibernate.annotations.SQLRestriction;
 
 /**
  * Provider aggregate root
@@ -24,6 +25,7 @@ import org.apache.logging.log4j.util.Strings;
 @Table(name = "providers")
 @Getter
 @Entity
+@SQLRestriction("is_deleted = false")
 public class Provider extends AuditableAbstractAggregateRoot<Provider> {
 
     @Column(nullable = false)
@@ -63,6 +65,9 @@ public class Provider extends AuditableAbstractAggregateRoot<Provider> {
     })
     private Ruc ruc;
 
+    @Column(nullable = false)
+    private Boolean isDeleted;
+
     /**
      * Default constructor required by JPA.
      * Keeps value object fields null so JPA can instantiate the aggregate. Domain factories
@@ -75,6 +80,7 @@ public class Provider extends AuditableAbstractAggregateRoot<Provider> {
         this.email = null;
         this.phoneNumber = null;
         this.ruc = null;
+        this.isDeleted = false;
     }
 
     /**
@@ -150,11 +156,12 @@ public class Provider extends AuditableAbstractAggregateRoot<Provider> {
 
     /**
      * Marks the provider as deleted logically in domain terms by registering a ProviderDeletedEvent.
-     * The actual removal from the database can be done by the application service/repository.
+     * Sets isDeleted to true for soft delete.
      *
      * @param reason optional reason for deletion (may be null)
      */
     public void markAsDeleted(String reason) {
+        this.isDeleted = true;
         this.addDomainEvent(new ProviderDeletedEvent(this, this.getId(), reason));
     }
 
