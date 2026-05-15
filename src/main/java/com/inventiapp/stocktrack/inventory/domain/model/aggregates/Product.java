@@ -127,6 +127,20 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     }
 
     /**
+     * Marks the product as inactive (soft delete).
+     */
+    public void markAsInactive() {
+        this.isActive = false;
+    }
+
+    /**
+     * Marks the product as active.
+     */
+    public void markAsActive() {
+        this.isActive = true;
+    }
+
+    /**
      * Normalizes text values to trimmed strings; converts null to empty string.
      *
      * @param value input string

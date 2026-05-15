@@ -1,6 +1,7 @@
 package com.inventiapp.stocktrack.inventory.domain.services;
 
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Product;
+import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProductsIncludingInactiveQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProductsQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetProductByIdQuery;
 
@@ -26,4 +27,11 @@ public interface ProductQueryService {
      * @return list of products
      */
     List<Product> handle(GetAllProductsQuery query);
+
+    /**
+     * Handle query to get all products including inactive.
+     * @param query get all products including inactive query
+     * @return list of products
+     */
+    List<Product> handle(GetAllProductsIncludingInactiveQuery query);
 }

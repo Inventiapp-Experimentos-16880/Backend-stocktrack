@@ -106,7 +106,7 @@ public class ProviderCommandServiceImpl implements ProviderCommandService {
 
     /**
      * Handles deletion of a provider.
-     * Marks the aggregate as deleted (registers ProviderDeletedEvent) before deleting from repository.
+     * Marks the aggregate as deleted (sets isDeleted = true and registers ProviderDeletedEvent) before saving to repository.
      *
      * @param command DeleteProviderCommand containing provider id
      */
@@ -119,7 +119,7 @@ public class ProviderCommandServiceImpl implements ProviderCommandService {
         try {
             provider.markAsDeleted(null);
 
-            providerRepository.delete(provider);
+            providerRepository.save(provider);
 
         } catch (DataIntegrityViolationException ex) {
             throw new ProviderRequestException(ex.getMostSpecificCause() != null
