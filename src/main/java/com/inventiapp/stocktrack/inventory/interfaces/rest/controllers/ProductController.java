@@ -1,9 +1,11 @@
 package com.inventiapp.stocktrack.inventory.interfaces.rest.controllers;
 
 import com.inventiapp.stocktrack.inventory.domain.exceptions.ProductAlreadyExistsException;
+import com.inventiapp.stocktrack.inventory.domain.exceptions.ProductHasStockException;
 import com.inventiapp.stocktrack.inventory.domain.exceptions.ProductNotFoundException;
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Product;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.DeleteProductCommand;
+import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProductsIncludingInactiveQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProductsQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetProductByIdQuery;
 import com.inventiapp.stocktrack.inventory.domain.services.ProductCommandService;
@@ -102,6 +104,20 @@ public class ProductController {
         return ResponseEntity.ok(resources);
     }
 
+    @Operation(summary = "Get all products including inactive", description = "Retrieve all products including inactive ones")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Products found")
+    })
+    @GetMapping("/all")
+    public ResponseEntity<List<ProductResource>> getAllIncludingInactive() {
+        var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+        List<Product> products = productQueryService.handle(new GetAllProductsIncludingInactiveQuery(ownerId));
+        List<ProductResource> resources = products.stream()
+                .map(ProductResourceFromEntityAssembler::toResource)
+                .toList();
+        return ResponseEntity.ok(resources);
+    }
+
     @Operation(summary = "Update a product", description = "Updates product data")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product updated"),
@@ -131,6 +147,7 @@ public class ProductController {
     @Operation(summary = "Delete a product", description = "Deletes a product by id")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Product deleted"),
+            @ApiResponse(responseCode = "400", description = "Bad request"),
             @ApiResponse(responseCode = "404", description = "Product not found")
     })
     @DeleteMapping("/{id}")
@@ -142,6 +159,8 @@ public class ProductController {
             return ResponseEntity.noContent().build();
         } catch (ProductNotFoundException ex) {
             return ResponseEntity.notFound().build();
+        } catch (ProductHasStockException ex) {
+            return ResponseEntity.badRequest().build();
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().build();
         }
