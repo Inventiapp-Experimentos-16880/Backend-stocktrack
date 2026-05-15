@@ -22,7 +22,7 @@ public interface ProviderRepository extends JpaRepository<Provider, Long> {
      * @param ownerId owner ID for multi-tenant isolation
      * @return Optional containing the provider if found
      */
-    @Query("SELECT p FROM Provider p WHERE p.id = :id AND p.ownerId = :ownerId")
+    @Query("SELECT p FROM Provider p WHERE p.id = :id AND p.ownerId = :ownerId AND p.isDeleted = false")
     Optional<Provider> findByIdAndOwnerId(@Param("id") Long id, @Param("ownerId") Long ownerId);
 
     /**
@@ -30,7 +30,7 @@ public interface ProviderRepository extends JpaRepository<Provider, Long> {
      * @param ownerId owner ID for multi-tenant isolation
      * @return List of providers
      */
-    @Query("SELECT p FROM Provider p WHERE p.ownerId = :ownerId ORDER BY p.id")
+    @Query("SELECT p FROM Provider p WHERE p.ownerId = :ownerId AND p.isDeleted = false ORDER BY p.id")
     List<Provider> findAllByOwnerId(@Param("ownerId") Long ownerId);
 
     /**
@@ -39,6 +39,16 @@ public interface ProviderRepository extends JpaRepository<Provider, Long> {
      * @param ownerId owner ID for multi-tenant isolation
      * @return true if exists
      */
-    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM Provider p WHERE p.ruc.value = :ruc AND p.ownerId = :ownerId")
+    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM Provider p WHERE p.ruc.value = :ruc AND p.ownerId = :ownerId AND p.isDeleted = false")
     boolean existsByRucAndOwnerId(@Param("ruc") String ruc, @Param("ownerId") Long ownerId);
+
+    /**
+     * Verifica si existe un proveedor por su ID técnico e ID de dueño,
+     * incluyendo aquellos que han sido borrados lógicamente.
+     */
+    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM Provider p WHERE p.id = :id AND p.ownerId = :ownerId")
+    boolean existsByIdAndOwnerIdIncludingDeleted(@Param("id") Long id, @Param("ownerId") Long ownerId);
+
+    @Query(value = "SELECT * FROM providers WHERE owner_id = :ownerId ORDER BY last_name ASC", nativeQuery = true)
+    List<Provider> findAllByOwnerIdIncludingDeleted(@Param("ownerId") Long ownerId);
 }

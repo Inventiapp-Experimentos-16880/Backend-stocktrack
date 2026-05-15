@@ -1,6 +1,7 @@
 package com.inventiapp.stocktrack.inventory.application.internal.queryservices;
 
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Provider;
+import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProvidersIncludingDeletedQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProvidersQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetProviderByIdQuery;
 import com.inventiapp.stocktrack.inventory.domain.services.ProviderQueryService;
@@ -44,5 +45,11 @@ public class ProviderQueryServiceImpl implements ProviderQueryService {
     @Override
     public Optional<Provider> handle(GetProviderByIdQuery query) {
         return providerRepository.findByIdAndOwnerId(query.providerId(), query.ownerId());
+    }
+
+    @Override
+    public List<Provider> handle(GetAllProvidersIncludingDeletedQuery query) {
+        // Este usa el método que definimos con Native Query para traer TODO
+        return providerRepository.findAllByOwnerIdIncludingDeleted(query.ownerId());
     }
 }

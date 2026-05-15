@@ -2,8 +2,9 @@ package com.inventiapp.stocktrack.inventory.application.internal.commandservices
 
 import com.inventiapp.stocktrack.inventory.domain.exceptions.CategoryNotFoundException;
 import com.inventiapp.stocktrack.inventory.domain.exceptions.ProductAlreadyExistsException;
+import com.inventiapp.stocktrack.inventory.domain.exceptions.ProductHasStockException;
 import com.inventiapp.stocktrack.inventory.domain.exceptions.ProductNotFoundException;
-import com.inventiapp.stocktrack.inventory.domain.exceptions.ProviderNotFoundException;
+import com.inventiapp.stocktrack.inventory.domain.exceptions.ProviderRequestException;
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Product;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.CreateProductCommand;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.DeleteProductCommand;
@@ -13,6 +14,7 @@ import com.inventiapp.stocktrack.inventory.domain.model.events.ProductDeletedEve
 import com.inventiapp.stocktrack.inventory.domain.model.events.ProductUpdatedEvent;
 import com.inventiapp.stocktrack.inventory.domain.services.ProductCommandService;
 import com.inventiapp.stocktrack.inventory.infrastructure.internal.CategoryRepository;
+import com.inventiapp.stocktrack.inventory.infrastructure.persistence.jpa.repositories.BatchRepository;
 import com.inventiapp.stocktrack.inventory.infrastructure.persistence.jpa.repositories.ProductRepository;
 import com.inventiapp.stocktrack.inventory.infrastructure.persistence.jpa.repositories.ProviderRepository;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -33,15 +35,18 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProviderRepository providerRepository;
+    private final BatchRepository batchRepository;
 
     public ProductCommandServiceImpl(
             ProductRepository productRepository,
             CategoryRepository categoryRepository,
-            ProviderRepository providerRepository
+            ProviderRepository providerRepository,
+            BatchRepository batchRepository
     ) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.providerRepository = providerRepository;
+        this.batchRepository = batchRepository;
     }
 
     /**
@@ -62,8 +67,8 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         }
 
         Long providerId = Long.parseLong(command.providerId());
-        if (!providerRepository.existsById(providerId)) {
-            throw new ProviderNotFoundException(providerId);
+        if (!providerRepository.existsByIdAndOwnerIdIncludingDeleted(providerId, command.ownerId())) {
+            throw new ProviderRequestException("Provider with ID " + providerId + " not found in the system");
         }
 
         if (productRepository.existsByNameAndProviderIdAndOwnerId(command.name(), command.providerId(), command.ownerId())) {
@@ -113,8 +118,8 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         }
 
         Long providerId = Long.parseLong(command.providerId());
-        if (!providerRepository.existsById(providerId)) {
-            throw new ProviderNotFoundException(providerId);
+        if (!providerRepository.existsByIdAndOwnerIdIncludingDeleted(providerId, command.ownerId())) {
+            throw new ProviderRequestException("Provider with ID " + providerId + " not found in the system");
         }
 
         product.updateProduct(command);
@@ -141,22 +146,32 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
     /**
      * Handles deletion of a product.
-     * Registers a ProductDeletedEvent on the aggregate before deleting from repository.
+     * Validates that the product has no stock before marking as inactive (soft delete).
+     * Registers a ProductDeletedEvent on the aggregate.
      *
      * @param command DeleteProductCommand containing product id
      * @throws ProductNotFoundException if the product does not exist
+     * @throws ProductHasStockException if the product has existing stock
      */
     @Override
     public void handle(DeleteProductCommand command) {
         Product product = productRepository.findByIdAndOwnerId(command.productId(), command.ownerId())
                 .orElseThrow(() -> new ProductNotFoundException(command.productId()));
 
+        // Check if product has stock
+        Integer totalStock = batchRepository.sumQuantityByProductIdAndOwnerId(command.productId(), command.ownerId());
+        if (totalStock > 0) {
+            throw new ProductHasStockException("Cannot delete product with existing stock. Current stock: " + totalStock);
+        }
+
+        product.markAsInactive();
+
         product.addDomainEvent(new ProductDeletedEvent(product, product.getId()));
 
         try {
-            productRepository.delete(product);
+            productRepository.save(product);
         } catch (DataIntegrityViolationException ex) {
-            throw new RuntimeException("Error deleting product: " +
+            throw new RuntimeException("Error updating product: " +
                     (ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage()));
         }
     }
