@@ -1,6 +1,7 @@
 package com.inventiapp.stocktrack.inventory.application.internal.queryservices;
 
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Product;
+import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProductsIncludingInactiveQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProductsQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetProductByIdQuery;
 import com.inventiapp.stocktrack.inventory.domain.services.ProductQueryService;
@@ -44,5 +45,15 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     @Override
     public List<Product> handle(GetAllProductsQuery query) {
         return productRepository.findAllByOwnerId(query.ownerId());
+    }
+
+    /**
+     * Handle query to get all products including inactive.
+     * @param query GetAllProductsIncludingInactiveQuery
+     * @return list of products
+     */
+    @Override
+    public List<Product> handle(GetAllProductsIncludingInactiveQuery query) {
+        return productRepository.findAllIncludingInactiveByOwnerId(query.ownerId());
     }
 }

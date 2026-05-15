@@ -3,6 +3,7 @@ package com.inventiapp.stocktrack.inventory.application.internal.commandservices
 import com.inventiapp.stocktrack.inventory.domain.exceptions.BatchNotFoundException;
 import com.inventiapp.stocktrack.inventory.domain.exceptions.ProductNotFoundException;
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Batch;
+import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Product;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.CreateBatchCommand;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.DeleteBatchCommand;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.UpdateBatchCommand;
@@ -36,7 +37,7 @@ public class BatchCommandServiceImpl implements BatchCommandService {
 
     /**
      * Handles the creation of a batch.
-     * Validates that the product exists.
+     * Validates that the product exists and reactivates it if inactive.
      * Registers a BatchCreatedEvent on the aggregate.
      *
      * @param command CreateBatchCommand with batch data
@@ -45,8 +46,13 @@ public class BatchCommandServiceImpl implements BatchCommandService {
      */
     @Override
     public Long handle(CreateBatchCommand command) {
-        if (!productRepository.existsById(command.productId())) {
-            throw new ProductNotFoundException(command.productId());
+        Product product = productRepository.findByIdAndOwnerId(command.productId(), command.ownerId())
+                .orElseThrow(() -> new ProductNotFoundException(command.productId()));
+
+        // Reactivate product if inactive
+        if (!product.getIsActive()) {
+            product.markAsActive();
+            productRepository.save(product);
         }
 
         Batch batch = new Batch(command);
