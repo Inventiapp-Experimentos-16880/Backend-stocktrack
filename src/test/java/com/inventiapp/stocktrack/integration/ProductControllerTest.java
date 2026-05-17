@@ -6,12 +6,12 @@ import com.inventiapp.stocktrack.inventory.domain.model.commands.CreateProductCo
 import com.inventiapp.stocktrack.inventory.domain.model.commands.DeleteProductCommand;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.UpdateProductCommand;
 import com.inventiapp.stocktrack.inventory.infrastructure.internal.CategoryRepository;
+import com.inventiapp.stocktrack.inventory.infrastructure.persistence.jpa.repositories.BatchRepository;
 import com.inventiapp.stocktrack.inventory.infrastructure.persistence.jpa.repositories.ProductRepository;
 import com.inventiapp.stocktrack.inventory.infrastructure.persistence.jpa.repositories.ProviderRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -32,11 +32,18 @@ class ProductControllerTest {
     @Mock
     private ProviderRepository providerRepository;
 
-    @InjectMocks
-    private ProductCommandServiceImpl productCommandService;
+    @Mock
+    private BatchRepository batchRepository;
 
     @Test
     void createProductTest() {
+        ProductCommandServiceImpl productCommandService = new ProductCommandServiceImpl(
+                productRepository,
+                categoryRepository,
+                providerRepository,
+                batchRepository
+        );
+
         // arrange
         CreateProductCommand createCommand = new CreateProductCommand(
                 "Widget",
@@ -51,7 +58,7 @@ class ProductControllerTest {
 
         // category and provider exist
         when(categoryRepository.existsById(10L)).thenReturn(true);
-        when(providerRepository.existsById(20L)).thenReturn(true);
+        when(providerRepository.existsByIdAndOwnerIdIncludingDeleted(20L, 1L)).thenReturn(true);
 
         when(productRepository.existsByNameAndProviderIdAndOwnerId("Widget", "20", 1L)).thenReturn(false);
 
@@ -78,6 +85,13 @@ class ProductControllerTest {
 
     @Test
     void updateProductTest() {
+        ProductCommandServiceImpl productCommandService = new ProductCommandServiceImpl(
+                productRepository,
+                categoryRepository,
+                providerRepository,
+                batchRepository
+        );
+
         // arrange
         UpdateProductCommand updateCommand = new UpdateProductCommand(
                 5L,
@@ -97,7 +111,7 @@ class ProductControllerTest {
 
         // category and provider exist
         when(categoryRepository.existsById(10L)).thenReturn(true);
-        when(providerRepository.existsById(20L)).thenReturn(true);
+        when(providerRepository.existsByIdAndOwnerIdIncludingDeleted(20L, 1L)).thenReturn(true);
 
         // when saving, return the same existingMock (simulate persistence)
         when(productRepository.save(existingMock)).thenReturn(existingMock);
@@ -117,11 +131,19 @@ class ProductControllerTest {
 
     @Test
     void deleteProductTest() {
+        ProductCommandServiceImpl productCommandService = new ProductCommandServiceImpl(
+                productRepository,
+                categoryRepository,
+                providerRepository,
+                batchRepository
+        );
+
         // arrange
         DeleteProductCommand deleteCommand = new DeleteProductCommand(7L, 1L);
 
         Product existingMock = mock(Product.class);
         when(productRepository.findByIdAndOwnerId(7L, 1L)).thenReturn(Optional.of(existingMock));
+        when(batchRepository.sumQuantityByProductIdAndOwnerId(7L, 1L)).thenReturn(0);
 
         // act
         assertDoesNotThrow(() -> productCommandService.handle(deleteCommand));
@@ -129,6 +151,7 @@ class ProductControllerTest {
         // verify
         verify(productRepository, times(1)).findByIdAndOwnerId(7L, 1L);
         verify(existingMock, times(1)).addDomainEvent(any()); // ProductDeletedEvent should be added
-        verify(productRepository, times(1)).delete(existingMock);
+        verify(existingMock, times(1)).markAsInactive();
+        verify(productRepository, times(1)).save(existingMock);
     }
 }
