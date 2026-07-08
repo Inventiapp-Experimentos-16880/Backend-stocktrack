@@ -6,15 +6,19 @@ import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Batch;
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Product;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.CreateBatchCommand;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.DeleteBatchCommand;
+import com.inventiapp.stocktrack.inventory.domain.model.commands.RecordStockMovementCommand;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.UpdateBatchCommand;
 import com.inventiapp.stocktrack.inventory.domain.model.events.BatchCreatedEvent;
 import com.inventiapp.stocktrack.inventory.domain.model.events.BatchDeletedEvent;
+import com.inventiapp.stocktrack.inventory.domain.model.valueobject.MovementType;
 import com.inventiapp.stocktrack.inventory.domain.services.BatchCommandService;
+import com.inventiapp.stocktrack.inventory.domain.services.StockMovementCommandService;
 import com.inventiapp.stocktrack.inventory.infrastructure.persistence.jpa.repositories.BatchRepository;
 import com.inventiapp.stocktrack.inventory.infrastructure.persistence.jpa.repositories.ProductRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.Optional;
 
 /**
@@ -29,10 +33,14 @@ public class BatchCommandServiceImpl implements BatchCommandService {
 
     private final BatchRepository batchRepository;
     private final ProductRepository productRepository;
+    private final StockMovementCommandService stockMovementCommandService;
 
-    public BatchCommandServiceImpl(BatchRepository batchRepository, ProductRepository productRepository) {
+    public BatchCommandServiceImpl(BatchRepository batchRepository,
+                                   ProductRepository productRepository,
+                                   StockMovementCommandService stockMovementCommandService) {
         this.batchRepository = batchRepository;
         this.productRepository = productRepository;
+        this.stockMovementCommandService = stockMovementCommandService;
     }
 
     /**
@@ -68,6 +76,19 @@ public class BatchCommandServiceImpl implements BatchCommandService {
 
         try {
             Batch saved = batchRepository.save(batch);
+
+            // Record the initial ENTRADA movement for the batch history.
+            if (saved.getQuantity() != null && saved.getQuantity() > 0) {
+                stockMovementCommandService.handle(new RecordStockMovementCommand(
+                        saved.getProductId(),
+                        saved.getId(),
+                        MovementType.ENTRADA,
+                        saved.getQuantity(),
+                        saved.getReceptionDate(),
+                        saved.getOwnerId()
+                ));
+            }
+
             return saved.getId();
         } catch (DataIntegrityViolationException ex) {
             throw new RuntimeException("Error saving batch: " +
@@ -106,6 +127,8 @@ public class BatchCommandServiceImpl implements BatchCommandService {
             throw new ProductNotFoundException(batch.getProductId());
         }
 
+        int previousQuantity = batch.getQuantity();
+
         if (command.newQuantity() >= 0) {
             batch.setQuantity(command.newQuantity());
         } else {
@@ -114,6 +137,21 @@ public class BatchCommandServiceImpl implements BatchCommandService {
 
         try {
             Batch updated = batchRepository.save(batch);
+
+            // Record the movement implied by the quantity delta: a decrease is a SALIDA
+            // (e.g. a sale routed through the ACL), an increase is an ENTRADA (restock).
+            int delta = updated.getQuantity() - previousQuantity;
+            if (delta != 0) {
+                stockMovementCommandService.handle(new RecordStockMovementCommand(
+                        updated.getProductId(),
+                        updated.getId(),
+                        delta > 0 ? MovementType.ENTRADA : MovementType.SALIDA,
+                        Math.abs(delta),
+                        new Date(),
+                        updated.getOwnerId()
+                ));
+            }
+
             return Optional.of(updated);
         } catch (DataIntegrityViolationException ex) {
             throw new RuntimeException("Error updating product: " +
