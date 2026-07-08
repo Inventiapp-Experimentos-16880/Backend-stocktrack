@@ -4,6 +4,7 @@ import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Product;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProductsIncludingInactiveQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProductsQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetProductByIdQuery;
+import com.inventiapp.stocktrack.inventory.domain.model.queries.GetProductsByNameQuery;
 import com.inventiapp.stocktrack.inventory.domain.services.ProductQueryService;
 import com.inventiapp.stocktrack.inventory.infrastructure.persistence.jpa.repositories.ProductRepository;
 import org.springframework.stereotype.Service;
@@ -55,5 +56,15 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     @Override
     public List<Product> handle(GetAllProductsIncludingInactiveQuery query) {
         return productRepository.findAllIncludingInactiveByOwnerId(query.ownerId());
+    }
+
+    /**
+     * Handle query to get products by name.
+     * @param query GetProductsByNameQuery
+     * @return list of matching products
+     */
+    @Override
+    public List<Product> handle(GetProductsByNameQuery query) {
+        return productRepository.findAllByOwnerIdAndNameContaining(query.ownerId(), query.name());
     }
 }
