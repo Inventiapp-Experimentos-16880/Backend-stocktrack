@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository interface for the ExpirationAlert aggregate.
@@ -47,4 +48,14 @@ public interface ExpirationAlertRepository extends JpaRepository<ExpirationAlert
             "ORDER BY a.triggeredAt DESC, a.id DESC")
     List<ExpirationAlert> findAllByOwnerIdAndStatus(@Param("ownerId") Long ownerId,
                                                     @Param("status") AlertStatus status);
+
+    /**
+     * Find an alert by ID within an owner's data (scoped for multi-tenant isolation).
+     *
+     * @param id      alert ID
+     * @param ownerId owner ID for multi-tenant isolation
+     * @return Optional containing the alert if found
+     */
+    @Query("SELECT a FROM ExpirationAlert a WHERE a.id = :id AND a.ownerId = :ownerId")
+    Optional<ExpirationAlert> findByIdAndOwnerId(@Param("id") Long id, @Param("ownerId") Long ownerId);
 }

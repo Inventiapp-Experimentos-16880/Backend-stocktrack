@@ -1,7 +1,9 @@
 package com.inventiapp.stocktrack.inventory.domain.model.aggregates;
 
+import com.inventiapp.stocktrack.inventory.domain.exceptions.AlertAlreadyResolvedException;
 import com.inventiapp.stocktrack.inventory.domain.model.commands.RaiseExpirationAlertCommand;
 import com.inventiapp.stocktrack.inventory.domain.model.valueobject.AlertStatus;
+import com.inventiapp.stocktrack.inventory.domain.model.valueobject.MitigationActionType;
 import com.inventiapp.stocktrack.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -46,6 +48,19 @@ public class ExpirationAlert extends AuditableAbstractAggregateRoot<ExpirationAl
     private Date triggeredAt;
 
     /**
+     * Mitigation action taken to resolve the alert. Null while the alert is PENDING.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column
+    private MitigationActionType actionType;
+
+    /**
+     * Timestamp when the mitigation action resolved the alert. Null while the alert is PENDING.
+     */
+    @Column
+    private Date resolvedAt;
+
+    /**
      * Creates a new ExpirationAlert from the RaiseExpirationAlertCommand in PENDING status.
      * Sets ownerId for multi-tenant isolation.
      *
@@ -62,5 +77,24 @@ public class ExpirationAlert extends AuditableAbstractAggregateRoot<ExpirationAl
 
         // Set ownerId for multi-tenant isolation
         this.setOwnerId(command.ownerId());
+    }
+
+    /**
+     * Resolves the alert by registering the mitigation action taken (US17 part 2).
+     * Records the action and its timestamp and moves the alert to RESOLVED.
+     *
+     * @param actionType the mitigation action taken (liquidation/return)
+     * @throws IllegalArgumentException     if the action type is null
+     * @throws AlertAlreadyResolvedException if the alert is not PENDING
+     */
+    public void resolve(MitigationActionType actionType) {
+        if (actionType == null) throw new IllegalArgumentException("actionType is required");
+        if (this.status != AlertStatus.PENDING) {
+            throw new AlertAlreadyResolvedException(this.getId());
+        }
+
+        this.actionType = actionType;
+        this.resolvedAt = new Date();
+        this.status = AlertStatus.RESOLVED;
     }
 }

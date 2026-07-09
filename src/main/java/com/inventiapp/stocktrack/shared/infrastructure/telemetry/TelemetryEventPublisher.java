@@ -22,6 +22,7 @@ public class TelemetryEventPublisher {
     private static final Logger log = LoggerFactory.getLogger(TelemetryEventPublisher.class);
 
     static final String BATCH_ALERT_TRIGGERED = "batch_alert_triggered";
+    static final String BATCH_ALERT_ACTION = "batch_alert_action";
 
     private final ExperimentEventRepository experimentEventRepository;
     private final ObjectMapper objectMapper;
@@ -61,6 +62,41 @@ public class TelemetryEventPublisher {
             // Telemetry is best-effort: never break the business flow because tracking failed.
             log.warn("Failed to publish {} event for alert {}: {}",
                     BATCH_ALERT_TRIGGERED, alertId, ex.getMessage());
+        }
+    }
+
+    /**
+     * Records a "batch_alert_action" event when a mitigation action resolves an expiration alert.
+     * Enables the batch_alert_triggered -> batch_alert_action funnel for the Alert Action Rate (8.2.3).
+     *
+     * @param ownerId    owner the alert belongs to
+     * @param alertId    id of the resolved alert (used as entityId)
+     * @param batchId    batch the alert refers to
+     * @param actionType mitigation action taken (e.g. LIQUIDATION/RETURN)
+     * @param quantity   units liquidated/returned
+     * @param occurredAt timestamp when the action was registered
+     */
+    public void publishBatchAlertAction(Long ownerId, Long alertId, Long batchId,
+                                        String actionType, Integer quantity, Date occurredAt) {
+        try {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("batchId", batchId);
+            payload.put("actionType", actionType);
+            payload.put("quantity", quantity);
+            payload.put("occurredAt", occurredAt);
+
+            ExperimentEvent event = new ExperimentEvent(
+                    ownerId,
+                    BATCH_ALERT_ACTION,
+                    alertId,
+                    objectMapper.writeValueAsString(payload),
+                    occurredAt
+            );
+            experimentEventRepository.save(event);
+        } catch (Exception ex) {
+            // Telemetry is best-effort: never break the business flow because tracking failed.
+            log.warn("Failed to publish {} event for alert {}: {}",
+                    BATCH_ALERT_ACTION, alertId, ex.getMessage());
         }
     }
 }
