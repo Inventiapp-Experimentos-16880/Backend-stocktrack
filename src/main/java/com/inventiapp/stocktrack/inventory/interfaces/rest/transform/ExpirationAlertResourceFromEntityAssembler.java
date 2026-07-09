@@ -25,7 +25,9 @@ public class ExpirationAlertResourceFromEntityAssembler {
                 alert.getProductId(),
                 alert.getExpirationDate(),
                 alert.getStatus().name(),
-                alert.getTriggeredAt()
+                alert.getTriggeredAt(),
+                alert.getActionType() != null ? alert.getActionType().name() : null,
+                alert.getResolvedAt()
         );
     }
 }

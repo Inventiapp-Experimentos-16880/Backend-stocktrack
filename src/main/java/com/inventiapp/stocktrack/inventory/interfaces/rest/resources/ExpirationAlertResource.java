@@ -11,6 +11,8 @@ import java.util.Date;
  * @param expirationDate expiration date of the batch
  * @param status         alert status (PENDING/RESOLVED)
  * @param triggeredAt    timestamp when the alert was raised
+ * @param actionType     mitigation action taken (LIQUIDATION/RETURN), null while PENDING
+ * @param resolvedAt     timestamp when the alert was resolved, null while PENDING
  */
 public record ExpirationAlertResource(
         Long id,
@@ -18,5 +20,7 @@ public record ExpirationAlertResource(
         Long productId,
         Date expirationDate,
         String status,
-        Date triggeredAt
+        Date triggeredAt,
+        String actionType,
+        Date resolvedAt
 ) {}
