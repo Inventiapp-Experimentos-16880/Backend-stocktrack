@@ -28,9 +28,13 @@ public class DashboardServiceImpl implements DashboardService {
 
     /**
      * Look-ahead window (in days) used by the dashboard's expiring-products notifications.
-     * Preserves the historical dashboard behavior (30 days).
+     * <p>
+     * Preserves the historical dashboard behavior exactly. The shared detection service now treats
+     * the Nth day as inclusive ({@code expDate <= today + N}); the legacy dashboard used an
+     * exclusive bound of 30 days ({@code expDate < today + 30}, i.e. up to today+29). Passing 29
+     * with the inclusive bound yields the identical set of batches (up to today+29).
      */
-    private static final int DASHBOARD_EXPIRATION_THRESHOLD_DAYS = 30;
+    private static final int DASHBOARD_EXPIRATION_THRESHOLD_DAYS = 29;
 
     private final ProductQueryService productQueryService;
     private final BatchQueryService batchQueryService;

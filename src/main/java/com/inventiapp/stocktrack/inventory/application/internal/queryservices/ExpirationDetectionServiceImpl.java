@@ -11,8 +11,9 @@ import java.util.List;
 /**
  * Implementation of ExpirationDetectionService.
  * <p>
- * Replicates the pre-existing dashboard criterion: a batch is near expiration when its
- * expiration date is strictly after today and strictly before {@code today + thresholdDays}.
+ * A batch is near expiration when its expiration date is strictly after today and on or before
+ * {@code today + thresholdDays} (the Nth day is inclusive). Already-expired batches and batches
+ * expiring today are excluded: US17 is preventive and does not cover consummated waste.
  * The input order is preserved so downstream callers that apply a limit keep selecting the
  * same batches as before.
  */
@@ -34,7 +35,8 @@ public class ExpirationDetectionServiceImpl implements ExpirationDetectionServic
                     LocalDate expDate = b.getExpirationDate().toInstant()
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate();
-                    return expDate.isBefore(windowEnd) && expDate.isAfter(today);
+                    // Inclusive upper bound: today < expDate <= today + thresholdDays.
+                    return expDate.isAfter(today) && !expDate.isAfter(windowEnd);
                 })
                 .toList();
     }

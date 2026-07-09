@@ -27,10 +27,10 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 /**
- * Covers the US17 part-1 acceptance criteria for the daily expiration scan:
- * a batch expiring within 7 days yields a PENDING alert (with telemetry), and batches outside
- * the window (already expired, exactly on day 7, or beyond) do not. Idempotency at scan level:
- * when the alert already exists no telemetry is published.
+ * Covers the US17 acceptance criteria for the daily expiration scan:
+ * a batch expiring within 7 days yields a PENDING alert (with telemetry). The threshold day is now
+ * inclusive, so a batch expiring exactly on day 7 alerts while day 8 (and already-expired batches)
+ * do not. Idempotency at scan level: when the alert already exists no telemetry is published.
  */
 @ExtendWith(MockitoExtension.class)
 class ExpirationAlertSchedulerTest {
@@ -77,29 +77,29 @@ class ExpirationAlertSchedulerTest {
     }
 
     @Test
-    void raisesAlertAndPublishesTelemetryOnlyForBatchExpiringWithinSevenDays() {
-        Batch expiringSoon = batch(30L, 3);   // within window -> alert
-        Batch onSeventhDay = batch(31L, 7);    // exclusive upper bound -> no alert
-        Batch farAway = batch(32L, 10);        // beyond window -> no alert
+    void raisesAlertAndPublishesTelemetryForBatchesExpiringWithinSevenDaysInclusive() {
+        Batch expiringSoon = batch(30L, 3);    // within window -> alert
+        Batch onSeventhDay = batch(31L, 7);    // inclusive upper bound -> alert
+        Batch onEighthDay = batch(32L, 8);     // just beyond window -> no alert
         Batch alreadyExpired = batch(33L, -1); // already expired -> no alert
 
         when(batchRepository.findAll())
-                .thenReturn(List.of(expiringSoon, onSeventhDay, farAway, alreadyExpired));
+                .thenReturn(List.of(expiringSoon, onSeventhDay, onEighthDay, alreadyExpired));
         when(expirationAlertCommandService.handle(any(RaiseExpirationAlertCommand.class)))
                 .thenReturn(Optional.of(100L));
 
         int created = scheduler.scan();
 
-        assertEquals(1, created);
+        assertEquals(2, created);
 
         ArgumentCaptor<RaiseExpirationAlertCommand> captor =
                 ArgumentCaptor.forClass(RaiseExpirationAlertCommand.class);
-        verify(expirationAlertCommandService, times(1)).handle(captor.capture());
-        assertEquals(30L, captor.getValue().batchId());
-        assertEquals(OWNER_ID, captor.getValue().ownerId());
+        verify(expirationAlertCommandService, times(2)).handle(captor.capture());
+        assertEquals(List.of(30L, 31L),
+                captor.getAllValues().stream().map(RaiseExpirationAlertCommand::batchId).toList());
 
-        verify(telemetryEventPublisher, times(1))
-                .publishBatchAlertTriggered(eq(OWNER_ID), eq(100L), eq(30L), eq(10L), any(Date.class));
+        verify(telemetryEventPublisher, times(2))
+                .publishBatchAlertTriggered(eq(OWNER_ID), eq(100L), anyLong(), eq(10L), any(Date.class));
     }
 
     @Test

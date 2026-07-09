@@ -9,8 +9,8 @@ import java.util.List;
  * <p>
  * Reusable by the dashboard (its own threshold) and by the daily expiration scan (7 days).
  * A batch is considered near expiration when its expiration date is strictly after today and
- * strictly before {@code today + thresholdDays} (i.e. already-expired batches, today, and the
- * exact Nth day are excluded), preserving the pre-existing dashboard semantics.
+ * on or before {@code today + thresholdDays} (i.e. already-expired batches and today are excluded,
+ * but the exact Nth day is included).
  */
 public interface ExpirationDetectionService {
 
