@@ -84,7 +84,7 @@ public class BatchCommandServiceImpl implements BatchCommandService {
                         saved.getId(),
                         MovementType.ENTRADA,
                         saved.getQuantity(),
-                        saved.getReceptionDate(),
+                        new Date(),
                         saved.getOwnerId()
                 ));
             }
