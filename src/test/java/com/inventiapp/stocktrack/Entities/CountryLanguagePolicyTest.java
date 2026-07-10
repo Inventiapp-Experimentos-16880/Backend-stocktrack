@@ -14,7 +14,7 @@ class CountryLanguagePolicyTest {
         var countryCode = "PE";
 
         // Act
-        var result = CountryLanguagePolicy.resolve(countryCode);
+        var result = CountryLanguagePolicy.recommendFor(countryCode);
 
         // Assert
         assertEquals(SupportedLanguage.SPANISH, result);
@@ -26,7 +26,7 @@ class CountryLanguagePolicyTest {
         var countryCode = "DE";
 
         // Act
-        var result = CountryLanguagePolicy.resolve(countryCode);
+        var result = CountryLanguagePolicy.recommendFor(countryCode);
 
         // Assert
         assertEquals(SupportedLanguage.GERMAN, result);
@@ -38,28 +38,88 @@ class CountryLanguagePolicyTest {
         var countryCode = "US";
 
         // Act
-        var result = CountryLanguagePolicy.resolve(countryCode);
+        var result = CountryLanguagePolicy.recommendFor(countryCode);
 
         // Assert
         assertEquals(SupportedLanguage.ENGLISH, result);
     }
 
     @Test
-    void shouldNormalizeLowercaseCountryCode() {
+    void shouldReturnFrenchForFrance() {
+        // Arrange
+        var countryCode = "FR";
+
+        // Act
+        var result = CountryLanguagePolicy.recommendFor(countryCode);
+
+        // Assert
+        assertEquals(SupportedLanguage.FRENCH, result);
+    }
+
+    @Test
+    void shouldReturnPortugueseForBrazil() {
+        // Arrange
+        var countryCode = "BR";
+
+        // Act
+        var result = CountryLanguagePolicy.recommendFor(countryCode);
+
+        // Assert
+        assertEquals(SupportedLanguage.PORTUGUESE, result);
+    }
+
+    @Test
+    void shouldReturnItalianForItaly() {
+        // Arrange
+        var countryCode = "IT";
+
+        // Act
+        var result = CountryLanguagePolicy.recommendFor(countryCode);
+
+        // Assert
+        assertEquals(SupportedLanguage.ITALIAN, result);
+    }
+
+    @Test
+    void shouldReturnJapaneseForJapan() {
+        // Arrange
+        var countryCode = "JP";
+
+        // Act
+        var result = CountryLanguagePolicy.recommendFor(countryCode);
+
+        // Assert
+        assertEquals(SupportedLanguage.JAPANESE, result);
+    }
+
+    @Test
+    void shouldNormalizeLowercaseSpanishCountryCode() {
         // Arrange
         var countryCode = "pe";
 
         // Act
-        var result = CountryLanguagePolicy.resolve(countryCode);
+        var result = CountryLanguagePolicy.recommendFor(countryCode);
 
         // Assert
         assertEquals(SupportedLanguage.SPANISH, result);
     }
 
     @Test
+    void shouldReturnPortugueseForLowercaseBrazilCountryCode() {
+        // Arrange
+        var countryCode = "br";
+
+        // Act
+        var result = CountryLanguagePolicy.recommendFor(countryCode);
+
+        // Assert
+        assertEquals(SupportedLanguage.PORTUGUESE, result);
+    }
+
+    @Test
     void shouldReturnEnglishWhenCountryCodeIsNull() {
         // Act
-        var result = CountryLanguagePolicy.resolve(null);
+        var result = CountryLanguagePolicy.recommendFor(null);
 
         // Assert
         assertEquals(SupportedLanguage.ENGLISH, result);
@@ -68,7 +128,19 @@ class CountryLanguagePolicyTest {
     @Test
     void shouldReturnEnglishWhenCountryCodeIsBlank() {
         // Act
-        var result = CountryLanguagePolicy.resolve(" ");
+        var result = CountryLanguagePolicy.recommendFor(" ");
+
+        // Assert
+        assertEquals(SupportedLanguage.ENGLISH, result);
+    }
+
+    @Test
+    void shouldReturnEnglishForUnsupportedCountry() {
+        // Arrange
+        var countryCode = "KR";
+
+        // Act
+        var result = CountryLanguagePolicy.recommendFor(countryCode);
 
         // Assert
         assertEquals(SupportedLanguage.ENGLISH, result);
