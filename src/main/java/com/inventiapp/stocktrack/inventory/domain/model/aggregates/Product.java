@@ -5,6 +5,7 @@ import com.inventiapp.stocktrack.inventory.domain.model.commands.UpdateProductCo
 import com.inventiapp.stocktrack.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,7 +18,9 @@ import org.apache.logging.log4j.util.Strings;
  * Contains basic validation and inherits audit fields.
  */
 @Entity
-@Table(name = "products")
+@Table(name = "products", indexes = {
+    @Index(name = "idx_products_owner_name", columnList = "owner_id, name")
+})
 @Getter
 @NoArgsConstructor
 public class Product extends AuditableAbstractAggregateRoot<Product> {

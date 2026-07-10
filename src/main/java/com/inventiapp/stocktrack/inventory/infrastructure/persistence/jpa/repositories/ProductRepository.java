@@ -57,4 +57,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      */
     @Query("SELECT p FROM Product p WHERE p.ownerId = :ownerId ORDER BY p.id")
     List<Product> findAllIncludingInactiveByOwnerId(@Param("ownerId") Long ownerId);
+
+    /**
+     * Find active products by name partial match and ownerId
+     * @param ownerId owner ID for multi-tenant isolation
+     * @param name product name to search
+     * @return List of matching products
+     */
+    @Query("SELECT p FROM Product p WHERE p.ownerId = :ownerId AND p.isActive = true AND LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%')) ORDER BY p.id")
+    List<Product> findAllByOwnerIdAndNameContaining(@Param("ownerId") Long ownerId, @Param("name") String name);
 }

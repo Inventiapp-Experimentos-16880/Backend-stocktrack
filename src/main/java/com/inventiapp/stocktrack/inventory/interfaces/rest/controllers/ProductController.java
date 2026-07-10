@@ -8,6 +8,7 @@ import com.inventiapp.stocktrack.inventory.domain.model.commands.DeleteProductCo
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProductsIncludingInactiveQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProductsQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetProductByIdQuery;
+import com.inventiapp.stocktrack.inventory.domain.model.queries.GetProductsByNameQuery;
 import com.inventiapp.stocktrack.inventory.domain.services.ProductCommandService;
 import com.inventiapp.stocktrack.inventory.domain.services.ProductQueryService;
 import com.inventiapp.stocktrack.iam.interfaces.acl.AuthenticatedUserContextFacade;
@@ -95,9 +96,14 @@ public class ProductController {
             @ApiResponse(responseCode = "200", description = "Products found")
     })
     @GetMapping
-    public ResponseEntity<List<ProductResource>> getAll() {
+    public ResponseEntity<List<ProductResource>> getAll(@RequestParam(required = false) String name) {
         var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
-        List<Product> products = productQueryService.handle(new GetAllProductsQuery(ownerId));
+        List<Product> products;
+        if (name != null && !name.isBlank()) {
+            products = productQueryService.handle(new GetProductsByNameQuery(ownerId, name));
+        } else {
+            products = productQueryService.handle(new GetAllProductsQuery(ownerId));
+        }
         List<ProductResource> resources = products.stream()
                 .map(ProductResourceFromEntityAssembler::toResource)
                 .toList();

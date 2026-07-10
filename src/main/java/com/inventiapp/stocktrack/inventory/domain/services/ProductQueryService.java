@@ -4,6 +4,7 @@ import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Product;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProductsIncludingInactiveQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProductsQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetProductByIdQuery;
+import com.inventiapp.stocktrack.inventory.domain.model.queries.GetProductsByNameQuery;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,4 +35,11 @@ public interface ProductQueryService {
      * @return list of products
      */
     List<Product> handle(GetAllProductsIncludingInactiveQuery query);
+
+    /**
+     * Handle query to get products by name.
+     * @param query get products by name query
+     * @return list of matching products
+     */
+    List<Product> handle(GetProductsByNameQuery query);
 }
