@@ -125,15 +125,10 @@ public class UserCommandServiceImpl implements UserCommandService {
         // Update ownerId to match the generated user ID (admin owns themselves)
         // Use native query to bypass the updatable=false constraint
         userRepository.updateOwnerIdNative(savedUser.getId(), savedUser.getId());
-
-        // Clear Hibernate first-level cache to force reloading from DB
+        
+        // Refresh the specific entity from database to load the updated ownerId in memory
         entityManager.flush();
-        entityManager.clear();
-
-        // Refresh the entity from database to get the updated ownerId
-        savedUser = userRepository.findById(savedUser.getId()).orElseThrow(
-                () -> new RuntimeException("Failed to retrieve the created user")
-        );
+        entityManager.refresh(savedUser);
 
         return Optional.of(savedUser);
     }
