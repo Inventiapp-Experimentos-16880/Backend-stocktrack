@@ -35,7 +35,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param userId The user ID to update
      * @param ownerId The owner ID to set
      */
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Transactional
     @Query(value = "UPDATE users SET owner_id = :ownerId WHERE id = :userId", nativeQuery = true)
     void updateOwnerIdNative(Long userId, Long ownerId);
