@@ -39,62 +39,54 @@ public class UserCommandServiceImpl implements UserCommandService {
     private final HashingService hashingService;
     private final TokenService tokenService;
     private final UserPermissionContextFacade userPermissionContextFacade;
-    private final jakarta.persistence.EntityManager entityManager;
 
     public UserCommandServiceImpl(UserRepository userRepository,
                                   RoleRepository roleRepository,
                                   HashingService hashingService,
                                   TokenService tokenService,
-                                  UserPermissionContextFacade userPermissionContextFacade,
-                                  jakarta.persistence.EntityManager entityManager) {
+                                  UserPermissionContextFacade userPermissionContextFacade) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.hashingService = hashingService;
         this.tokenService = tokenService;
         this.userPermissionContextFacade = userPermissionContextFacade;
-        this.entityManager = entityManager;
     }
 
     /**
      * Handle the sign-in command
      * <p>
-     *     This method handles the {@link SignInCommand} command and returns the user and the token.
+     *     This method handles the {@link SignInCommand} command and returns the authenticated user and token.
      * </p>
-     * @param command the sign-in command containing the email and password
-     * @return an optional containing the user matching the email and the generated token
-     * @throws RuntimeException if the user is not found or the password is invalid
+     * @param command the sign in command containing the email and password
+     * @return the authenticated user and token
      */
     @Override
     public Optional<ImmutablePair<User, String>> handle(SignInCommand command) {
         var user = userRepository.findByEmail(command.email());
         if (user.isEmpty()) {
-            throw new RuntimeException("User not found");
+            return Optional.empty();
         }
-
         if (!hashingService.matches(command.password(), user.get().getPassword())) {
-            throw new RuntimeException("Invalid password");
+            return Optional.empty();
         }
-
-        var userEntity = user.get();
         var token = tokenService.generateToken(
-                userEntity.getId(),
-                userEntity.getEmail(),
-                userEntity.getRolesAsStringList(),
-                userEntity.getOwnerId()
+                user.get().getId(),
+                user.get().getEmail(),
+                user.get().getRolesAsStringList(),
+                user.get().getOwnerId()
         );
-        return Optional.of(ImmutablePair.of(userEntity, token));
+        return Optional.of(new ImmutablePair<>(user.get(), token));
     }
 
     /**
-     * Handle the sign-up command
+     * Handle the sign up command
      * <p>
      *     This method handles the {@link SignUpCommand} command and returns the created user.
-     *     Sign-up creates an ADMIN user (business owner) with ALL permissions automatically.
+     *     The first registered user always gets ROLE_ADMIN.
      *     For admins: ownerId = userId (they own themselves)
      * </p>
-     * @param command the sign-up command containing the email and password
-     * @return the created user with ROLE_ADMIN and all permissions
-     * @throws RuntimeException if the email already exists
+     * @param command the sign up command containing the email and password
+     * @return the created user
      */
     @Override
     public Optional<User> handle(SignUpCommand command) {
@@ -115,7 +107,7 @@ public class UserCommandServiceImpl implements UserCommandService {
 
         var encodedPassword = hashingService.encode(command.password());
         var user = new User(command.email(), encodedPassword, roles, allPermissions);
-
+        
         // Set a temporary ownerId before first save (will be updated to actual ID after generation)
         user.assignOwnerId(0L);
 
@@ -124,11 +116,13 @@ public class UserCommandServiceImpl implements UserCommandService {
 
         // Update ownerId to match the generated user ID (admin owns themselves)
         // Use native query to bypass the updatable=false constraint
+        // clearAutomatically = true in @Modifying will automatically clear the Hibernate session cache
         userRepository.updateOwnerIdNative(savedUser.getId(), savedUser.getId());
         
-        // Refresh the specific entity from database to load the updated ownerId in memory
-        entityManager.flush();
-        entityManager.refresh(savedUser);
+        // Retrieve the entity from database which forces reloading with correct ownerId
+        savedUser = userRepository.findById(savedUser.getId()).orElseThrow(
+                () -> new RuntimeException("Failed to retrieve the created user")
+        );
 
         return Optional.of(savedUser);
     }
