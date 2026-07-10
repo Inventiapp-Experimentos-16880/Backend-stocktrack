@@ -39,17 +39,20 @@ public class UserCommandServiceImpl implements UserCommandService {
     private final HashingService hashingService;
     private final TokenService tokenService;
     private final UserPermissionContextFacade userPermissionContextFacade;
+    private final jakarta.persistence.EntityManager entityManager;
 
     public UserCommandServiceImpl(UserRepository userRepository,
                                   RoleRepository roleRepository,
                                   HashingService hashingService,
                                   TokenService tokenService,
-                                  UserPermissionContextFacade userPermissionContextFacade) {
+                                  UserPermissionContextFacade userPermissionContextFacade,
+                                  jakarta.persistence.EntityManager entityManager) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.hashingService = hashingService;
         this.tokenService = tokenService;
         this.userPermissionContextFacade = userPermissionContextFacade;
+        this.entityManager = entityManager;
     }
 
     /**
@@ -112,7 +115,7 @@ public class UserCommandServiceImpl implements UserCommandService {
 
         var encodedPassword = hashingService.encode(command.password());
         var user = new User(command.email(), encodedPassword, roles, allPermissions);
-        
+
         // Set a temporary ownerId before first save (will be updated to actual ID after generation)
         user.assignOwnerId(0L);
 
@@ -122,7 +125,10 @@ public class UserCommandServiceImpl implements UserCommandService {
         // Update ownerId to match the generated user ID (admin owns themselves)
         // Use native query to bypass the updatable=false constraint
         userRepository.updateOwnerIdNative(savedUser.getId(), savedUser.getId());
-        savedUser.assignOwnerId(savedUser.getId());
+
+        // Clear Hibernate first-level cache to force reloading from DB
+        entityManager.flush();
+        entityManager.clear();
 
         // Refresh the entity from database to get the updated ownerId
         savedUser = userRepository.findById(savedUser.getId()).orElseThrow(
@@ -164,7 +170,7 @@ public class UserCommandServiceImpl implements UserCommandService {
 
         var encodedPassword = hashingService.encode(command.password());
         var user = new User(command.email(), encodedPassword, roles, permissions);
-        
+
         // Set the ownerId to the admin who created this user
         user.assignOwnerId(command.ownerId());
 
