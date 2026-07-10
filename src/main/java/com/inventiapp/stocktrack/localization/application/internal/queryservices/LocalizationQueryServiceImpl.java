@@ -57,7 +57,7 @@ public class LocalizationQueryServiceImpl
             String countryCode
     ) {
         var recommendedLanguage =
-                CountryLanguagePolicy.resolve(countryCode);
+                CountryLanguagePolicy.recommendFor(countryCode);
 
         return new LocalizationResult(
                 countryCode,
