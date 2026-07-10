@@ -122,6 +122,7 @@ public class UserCommandServiceImpl implements UserCommandService {
         // Update ownerId to match the generated user ID (admin owns themselves)
         // Use native query to bypass the updatable=false constraint
         userRepository.updateOwnerIdNative(savedUser.getId(), savedUser.getId());
+        savedUser.assignOwnerId(savedUser.getId());
 
         // Refresh the entity from database to get the updated ownerId
         savedUser = userRepository.findById(savedUser.getId()).orElseThrow(
