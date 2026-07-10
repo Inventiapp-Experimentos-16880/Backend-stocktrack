@@ -112,6 +112,7 @@ public class WebSecurityConfiguration {
                                 "/webjars/**",
                                 "/configuration/ui",
                                 "/configuration/security",
+                                "/api/v1/subscriptions/webhooks/**",
                                 "/error",
                                 "/favicon.ico"
                         ).permitAll()
