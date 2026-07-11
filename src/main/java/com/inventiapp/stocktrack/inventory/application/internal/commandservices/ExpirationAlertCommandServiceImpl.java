@@ -89,8 +89,10 @@ public class ExpirationAlertCommandServiceImpl implements ExpirationAlertCommand
         int newQuantity = available - actionQuantity;
         batchCommandService.handle(new UpdateBatchCommand(batch.getId(), newQuantity, command.ownerId()));
 
-        // Resolve the alert (validates PENDING, sets actionType + resolvedAt + RESOLVED).
-        alert.resolve(command.actionType());
+        // Resolve the alert (validates PENDING, sets actionType + actionQuantity + resolvedAt + RESOLVED).
+        // actionQuantity is the effective amount that left the stock, not the raw request value:
+        // when the caller omits it, the full batch quantity computed above is recorded.
+        alert.resolve(command.actionType(), actionQuantity);
         ExpirationAlert resolved = expirationAlertRepository.save(alert);
 
         // Best-effort telemetry: enables the batch_alert_triggered -> batch_alert_action funnel.

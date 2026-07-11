@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -83,9 +84,11 @@ class ExpirationAlertMitigationServiceTest {
         var command = new RegisterMitigationActionCommand(1L, MitigationActionType.LIQUIDATION, null, OWNER_ID);
         ExpirationAlert result = service.handle(command);
 
-        // Alert is now resolved with the action recorded.
+        // Alert is now resolved with the action recorded. The omitted quantity means the whole
+        // batch went out, so the full computed quantity (20) is what gets persisted.
         assertEquals(AlertStatus.RESOLVED, result.getStatus());
         assertEquals(MitigationActionType.LIQUIDATION, result.getActionType());
+        assertEquals(20, result.getActionQuantity());
         assertNotNull(result.getResolvedAt());
 
         // Stock exit delegated to the existing UpdateBatch flow: newQuantity = 20 - 20 = 0,
@@ -101,9 +104,33 @@ class ExpirationAlertMitigationServiceTest {
     }
 
     @Test
+    void persistsTheQuantityThatEffectivelyLeftTheStock() {
+        ExpirationAlert alert = pendingAlert();
+        Batch batch = batchWithQuantity(20);
+        when(expirationAlertRepository.findByIdAndOwnerId(1L, OWNER_ID)).thenReturn(Optional.of(alert));
+        when(batchRepository.findByIdAndOwnerId(BATCH_ID, OWNER_ID)).thenReturn(Optional.of(batch));
+        when(expirationAlertRepository.save(any(ExpirationAlert.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Partial liquidation: 7 of the 20 available units.
+        var command = new RegisterMitigationActionCommand(1L, MitigationActionType.LIQUIDATION, 7, OWNER_ID);
+        ExpirationAlert result = service.handle(command);
+
+        // The alert records the same amount that was handed to UpdateBatch (20 - 7 = 13 left).
+        assertEquals(7, result.getActionQuantity());
+        ArgumentCaptor<UpdateBatchCommand> captor = ArgumentCaptor.forClass(UpdateBatchCommand.class);
+        verify(batchCommandService).handle(captor.capture());
+        assertEquals(13, captor.getValue().newQuantity());
+    }
+
+    @Test
+    void pendingAlertHasNoActionQuantity() {
+        assertNull(pendingAlert().getActionQuantity());
+    }
+
+    @Test
     void rejectsActionOnAlreadyResolvedAlertWithoutTouchingStock() {
         ExpirationAlert alert = pendingAlert();
-        alert.resolve(MitigationActionType.RETURN); // already RESOLVED
+        alert.resolve(MitigationActionType.RETURN, 3); // already RESOLVED
         when(expirationAlertRepository.findByIdAndOwnerId(1L, OWNER_ID)).thenReturn(Optional.of(alert));
 
         var command = new RegisterMitigationActionCommand(1L, MitigationActionType.LIQUIDATION, null, OWNER_ID);

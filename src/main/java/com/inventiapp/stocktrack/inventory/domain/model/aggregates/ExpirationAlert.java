@@ -55,6 +55,14 @@ public class ExpirationAlert extends AuditableAbstractAggregateRoot<ExpirationAl
     private MitigationActionType actionType;
 
     /**
+     * Quantity effectively taken out of stock by the mitigation action. Null while the alert is
+     * PENDING. When the caller omits a quantity the action covers the whole batch, so this holds
+     * the full quantity that was removed, never the raw request value.
+     */
+    @Column
+    private Integer actionQuantity;
+
+    /**
      * Timestamp when the mitigation action resolved the alert. Null while the alert is PENDING.
      */
     @Column
@@ -81,19 +89,25 @@ public class ExpirationAlert extends AuditableAbstractAggregateRoot<ExpirationAl
 
     /**
      * Resolves the alert by registering the mitigation action taken (US17 part 2).
-     * Records the action and its timestamp and moves the alert to RESOLVED.
+     * Records the action, the quantity it removed from stock and its timestamp, and moves the
+     * alert to RESOLVED.
      *
-     * @param actionType the mitigation action taken (liquidation/return)
-     * @throws IllegalArgumentException     if the action type is null
+     * @param actionType     the mitigation action taken (liquidation/return)
+     * @param actionQuantity the quantity effectively removed from the batch by the action
+     * @throws IllegalArgumentException      if the action type is null or the quantity is not positive
      * @throws AlertAlreadyResolvedException if the alert is not PENDING
      */
-    public void resolve(MitigationActionType actionType) {
+    public void resolve(MitigationActionType actionType, Integer actionQuantity) {
         if (actionType == null) throw new IllegalArgumentException("actionType is required");
+        if (actionQuantity == null || actionQuantity <= 0) {
+            throw new IllegalArgumentException("actionQuantity must be a positive quantity");
+        }
         if (this.status != AlertStatus.PENDING) {
             throw new AlertAlreadyResolvedException(this.getId());
         }
 
         this.actionType = actionType;
+        this.actionQuantity = actionQuantity;
         this.resolvedAt = new Date();
         this.status = AlertStatus.RESOLVED;
     }
