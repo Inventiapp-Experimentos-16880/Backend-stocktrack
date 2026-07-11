@@ -11,9 +11,11 @@ import java.util.List;
 /**
  * Implementation of ExpirationDetectionService.
  * <p>
- * A batch is near expiration when its expiration date is strictly after today and on or before
- * {@code today + thresholdDays} (the Nth day is inclusive). Already-expired batches and batches
- * expiring today are excluded: US17 is preventive and does not cover consummated waste.
+ * A batch is near expiration when it still holds stock ({@code quantity > 0}) and its expiration date
+ * is strictly after today and on or before {@code today + thresholdDays} (the Nth day is inclusive).
+ * Already-expired batches and batches expiring today are excluded: US17 is preventive and does not
+ * cover consummated waste. Batches without stock ({@code quantity <= 0}, null included) are excluded
+ * too: US17 does not cover batches with no units left to mitigate.
  * The input order is preserved so downstream callers that apply a limit keep selecting the
  * same batches as before.
  */
@@ -30,6 +32,8 @@ public class ExpirationDetectionServiceImpl implements ExpirationDetectionServic
         LocalDate windowEnd = today.plusDays(thresholdDays);
 
         return batches.stream()
+                // No stock left means no waste to mitigate; a null quantity counts as empty.
+                .filter(b -> b.getQuantity() != null && b.getQuantity() > 0)
                 .filter(b -> b.getExpirationDate() != null)
                 .filter(b -> {
                     LocalDate expDate = b.getExpirationDate().toInstant()

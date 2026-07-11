@@ -72,6 +72,8 @@ class ExpirationAlertSchedulerTest {
         lenient().when(batch.getId()).thenReturn(id);
         lenient().when(batch.getProductId()).thenReturn(10L);
         lenient().when(batch.getOwnerId()).thenReturn(OWNER_ID);
+        // The detection service only looks at batches that still hold stock.
+        when(batch.getQuantity()).thenReturn(4);
         when(batch.getExpirationDate()).thenReturn(daysFromNow(daysToExpiration));
         return batch;
     }
