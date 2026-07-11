@@ -11,6 +11,7 @@ public record DashboardStatsResource(
         int productsInInventory,
         double monthlyIncome,
         int salesThisMonth,
-        int productsWithAlerts
+        int productsWithAlerts,
+        double savingsThisMonth
 ) {}
 

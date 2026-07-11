@@ -102,6 +102,7 @@ public class WebSecurityConfiguration {
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         .requestMatchers(
                                 "/api/v1/authentication/**",
+                                "/api/v1/localization/**",
                                 "/v3/api-docs/**",
                                 "/v3/api-docs",
                                 "/swagger-ui/**",
@@ -112,6 +113,7 @@ public class WebSecurityConfiguration {
                                 "/webjars/**",
                                 "/configuration/ui",
                                 "/configuration/security",
+                                "/api/v1/subscriptions/webhooks/**",
                                 "/error",
                                 "/favicon.ico"
                         ).permitAll()
