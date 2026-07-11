@@ -60,14 +60,36 @@ public class ExpirationAlertScheduler {
     }
 
     /**
-     * Scans every batch, raises a PENDING alert for each one expiring within the threshold, and
-     * publishes a telemetry event for every newly created alert. Exposed (package-visible) so it
+     * Scans every batch across every tenant, raising alerts and publishing telemetry. Exposed so it
      * can be driven directly from tests without the cron trigger.
      *
      * @return the number of new alerts created in this run
      */
     public int scan() {
-        List<Batch> batches = batchRepository.findAll();
+        return scan(batchRepository.findAll());
+    }
+
+    /**
+     * Runs the near-expiration scan on demand for a single owner. Fetches only that owner's batches
+     * (multi-tenant isolation) and applies the shared scan logic, so idempotency and telemetry match
+     * the daily job exactly.
+     *
+     * @param ownerId the owner whose batches should be scanned
+     * @return the number of new alerts created for this owner
+     */
+    public int scanForOwner(Long ownerId) {
+        return scan(batchRepository.findAllByOwnerId(ownerId));
+    }
+
+    /**
+     * Core scan logic shared by the daily job and the on-demand endpoint: detects the batches
+     * expiring within the threshold, raises an idempotent PENDING alert for each, and publishes a
+     * telemetry event for every newly created alert.
+     *
+     * @param batches the batches to evaluate (already scoped by the caller)
+     * @return the number of new alerts created in this run
+     */
+    public int scan(List<Batch> batches) {
         List<Batch> expiringSoon = expirationDetectionService.findExpiringSoon(batches, thresholdDays);
 
         Date triggeredAt = new Date();
