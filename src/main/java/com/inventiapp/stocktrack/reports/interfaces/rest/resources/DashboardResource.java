@@ -13,6 +13,7 @@ public record DashboardResource(
         DashboardStatsResource stats,
         List<MonthlyIncomeResource> monthlyIncome,
         List<ProductSalesResource> productSales,
-        List<NotificationResource> notifications
+        List<NotificationResource> notifications,
+        List<ResolvedAlertResource> resolvedAlerts
 ) {}
 
