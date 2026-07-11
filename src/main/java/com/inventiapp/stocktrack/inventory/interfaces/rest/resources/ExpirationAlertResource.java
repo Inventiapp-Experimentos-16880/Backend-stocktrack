@@ -12,6 +12,7 @@ import java.util.Date;
  * @param status         alert status (PENDING/RESOLVED)
  * @param triggeredAt    timestamp when the alert was raised
  * @param actionType     mitigation action taken (LIQUIDATION/RETURN), null while PENDING
+ * @param actionQuantity quantity removed from stock by the mitigation action, null while PENDING
  * @param resolvedAt     timestamp when the alert was resolved, null while PENDING
  */
 public record ExpirationAlertResource(
@@ -22,5 +23,6 @@ public record ExpirationAlertResource(
         String status,
         Date triggeredAt,
         String actionType,
+        Integer actionQuantity,
         Date resolvedAt
 ) {}

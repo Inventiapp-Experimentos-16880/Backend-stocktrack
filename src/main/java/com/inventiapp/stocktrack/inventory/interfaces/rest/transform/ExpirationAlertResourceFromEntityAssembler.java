@@ -27,6 +27,7 @@ public class ExpirationAlertResourceFromEntityAssembler {
                 alert.getStatus().name(),
                 alert.getTriggeredAt(),
                 alert.getActionType() != null ? alert.getActionType().name() : null,
+                alert.getActionQuantity(),
                 alert.getResolvedAt()
         );
     }
