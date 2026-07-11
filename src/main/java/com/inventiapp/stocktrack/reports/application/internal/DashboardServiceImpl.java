@@ -5,6 +5,7 @@ import com.inventiapp.stocktrack.inventory.domain.model.aggregates.Product;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllBatchesQuery;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllProductsQuery;
 import com.inventiapp.stocktrack.inventory.domain.services.BatchQueryService;
+import com.inventiapp.stocktrack.inventory.domain.services.ExpirationDetectionService;
 import com.inventiapp.stocktrack.inventory.domain.services.ProductQueryService;
 import com.inventiapp.stocktrack.reports.application.DashboardService;
 import com.inventiapp.stocktrack.reports.interfaces.rest.resources.*;
@@ -25,19 +26,32 @@ import java.util.stream.Collectors;
 @Service
 public class DashboardServiceImpl implements DashboardService {
 
+    /**
+     * Look-ahead window (in days) used by the dashboard's expiring-products notifications.
+     * <p>
+     * Preserves the historical dashboard behavior exactly. The shared detection service now treats
+     * the Nth day as inclusive ({@code expDate <= today + N}); the legacy dashboard used an
+     * exclusive bound of 30 days ({@code expDate < today + 30}, i.e. up to today+29). Passing 29
+     * with the inclusive bound yields the identical set of batches (up to today+29).
+     */
+    private static final int DASHBOARD_EXPIRATION_THRESHOLD_DAYS = 29;
+
     private final ProductQueryService productQueryService;
     private final BatchQueryService batchQueryService;
     private final SaleQueryService saleQueryService;
+    private final ExpirationDetectionService expirationDetectionService;
     private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
     public DashboardServiceImpl(
             ProductQueryService productQueryService,
             BatchQueryService batchQueryService,
             SaleQueryService saleQueryService,
+            ExpirationDetectionService expirationDetectionService,
             AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.productQueryService = productQueryService;
         this.batchQueryService = batchQueryService;
         this.saleQueryService = saleQueryService;
+        this.expirationDetectionService = expirationDetectionService;
         this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
@@ -218,16 +232,10 @@ public class DashboardServiceImpl implements DashboardService {
                     ));
                 });
 
-        // Expiring products notifications (next 30 days)
-        LocalDate thirtyDaysFromNow = LocalDate.now().plusDays(30);
-        batches.stream()
-                .filter(b -> b.getExpirationDate() != null)
-                .filter(b -> {
-                    LocalDate expDate = b.getExpirationDate().toInstant()
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDate();
-                    return expDate.isBefore(thirtyDaysFromNow) && expDate.isAfter(LocalDate.now());
-                })
+        // Expiring products notifications (next 30 days).
+        // The "near expiration" criterion is delegated to the shared ExpirationDetectionService
+        // so the dashboard and the daily expiration scan stay consistent.
+        expirationDetectionService.findExpiringSoon(batches, DASHBOARD_EXPIRATION_THRESHOLD_DAYS).stream()
                 .limit(5)
                 .forEach(b -> {
                     LocalDate expDate = b.getExpirationDate().toInstant()
