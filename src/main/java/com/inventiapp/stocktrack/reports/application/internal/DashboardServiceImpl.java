@@ -105,10 +105,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .mapToDouble(d -> d.getTotalPrice() * 0.25) // assuming 25% of these sales were saved from waste by alerts
                 .sum();
 
-        // If calculated savings is 0, provide a default realistic baseline of 450.00 for demo purposes
-        if (savingsThisMonth <= 0) {
-            savingsThisMonth = 450.00;
-        }
+
 
         return new DashboardStatsResource(
                 productsInInventory,
@@ -282,12 +279,7 @@ public class DashboardServiceImpl implements DashboardService {
                 )
                 .collect(Collectors.toList());
 
-        // Fallback demo data if empty
-        if (resolved.isEmpty()) {
-            resolved.add(new ResolvedAlertResource("Leche Gloria 400g", 30, 120.00, "2026-07-10"));
-            resolved.add(new ResolvedAlertResource("Arroz Costeño 5kg", 15, 180.00, "2026-07-08"));
-            resolved.add(new ResolvedAlertResource("Aceite Primor 1L", 10, 150.00, "2026-07-05"));
-        }
+
 
         return resolved;
     }
