@@ -6,9 +6,11 @@ import com.inventiapp.stocktrack.inventory.domain.exceptions.BatchNotFoundExcept
 import com.inventiapp.stocktrack.inventory.domain.exceptions.ExpirationAlertNotFoundException;
 import com.inventiapp.stocktrack.inventory.domain.model.aggregates.ExpirationAlert;
 import com.inventiapp.stocktrack.inventory.domain.model.queries.GetAllExpirationAlertsQuery;
+import com.inventiapp.stocktrack.inventory.application.internal.scheduling.ExpirationAlertScheduler;
 import com.inventiapp.stocktrack.inventory.domain.services.ExpirationAlertCommandService;
 import com.inventiapp.stocktrack.inventory.domain.services.ExpirationAlertQueryService;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.ExpirationAlertResource;
+import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.ExpirationScanResultResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.resources.RegisterMitigationActionResource;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.transform.ExpirationAlertResourceFromEntityAssembler;
 import com.inventiapp.stocktrack.inventory.interfaces.rest.transform.RegisterMitigationActionCommandFromResourceAssembler;
@@ -39,13 +41,16 @@ public class ExpirationAlertController {
 
     private final ExpirationAlertQueryService expirationAlertQueryService;
     private final ExpirationAlertCommandService expirationAlertCommandService;
+    private final ExpirationAlertScheduler expirationAlertScheduler;
     private final AuthenticatedUserContextFacade authenticatedUserContextFacade;
 
     public ExpirationAlertController(ExpirationAlertQueryService expirationAlertQueryService,
                                      ExpirationAlertCommandService expirationAlertCommandService,
+                                     ExpirationAlertScheduler expirationAlertScheduler,
                                      AuthenticatedUserContextFacade authenticatedUserContextFacade) {
         this.expirationAlertQueryService = expirationAlertQueryService;
         this.expirationAlertCommandService = expirationAlertCommandService;
+        this.expirationAlertScheduler = expirationAlertScheduler;
         this.authenticatedUserContextFacade = authenticatedUserContextFacade;
     }
 
@@ -63,6 +68,24 @@ public class ExpirationAlertController {
                     .map(ExpirationAlertResourceFromEntityAssembler::toResource)
                     .toList();
             return ResponseEntity.ok(resources);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/scan")
+    @Operation(summary = "Run the near-expiration scan on demand",
+            description = "Runs the same near-expiration scan as the daily job, but scoped to the " +
+                    "authenticated owner's batches. Alert creation is idempotent, so existing PENDING " +
+                    "alerts are not duplicated. Returns the number of new alerts created.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Scan completed, returns the number of new alerts created"),
+            @ApiResponse(responseCode = "400", description = "Bad request")})
+    public ResponseEntity<ExpirationScanResultResource> scan() {
+        try {
+            var ownerId = authenticatedUserContextFacade.getCurrentOwnerId();
+            int created = expirationAlertScheduler.scanForOwner(ownerId);
+            return ResponseEntity.ok(new ExpirationScanResultResource(created));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
